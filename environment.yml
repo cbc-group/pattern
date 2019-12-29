@@ -1,0 +1,19 @@
+name: pattern
+
+channels:
+    - defaults
+    - conda-forge
+
+dependencies:
+    # core
+    - python=3
+
+    # linter
+    - flake8
+    
+    # formatter
+    - black
+
+    # libraries from conda has mkl support
+    - numpy
+    - scipy
