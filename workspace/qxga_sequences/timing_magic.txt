@@ -1,0 +1,51 @@
+illum_start = 276.16m
+illum_end = 49944.213m
+illum_window = 49668.053 = 49944.213 - 276.16
+
+total_duration = 49999.893m
+
+total_on_time = 49610.453m
+
+illum_window = [illum -> flip -> illum]
+total_on = illum*2
+
+t_flip = illum_window - total_on = 49668.053 - 49610.453 = 57.6u, 5184t
+
+-
+
+[0fff, 8-bit * 3-plane(RGB)]
+5ms     5 -> 120
+10ms    10 -> 240
+20ms    22 -> 528
+50ms    56 -> 1344
+
+[timing, 90MHz ticks]
+5ms     4610.347  -> 414931230
+10ms    9610.24   -> 864921600
+20ms    19610.24  -> 1764921600
+50ms    49610.453 -> 4464940770
+
+[magic]
+5ms     0458 -> 2130
+10ms    0fe0 -> 4064 
+20ms    06ef -> 1775 
+50ms    0c1f -> 3103 
+
+5ms     04 58 -> 4 88    0000 0100 0101 1000
+10ms    0f e0 -> 15 224  0000 1111 1110 0000
+20ms    06 ef -> 6 239   0000 0110 1110 1111
+50ms    0c 1f -> 12 31   0000 1100 0001 1111
+
+
+[magic * (0fff)]
+5ms     255600
+10ms    975360
+20ms    937200
+50ms    4170432
+
+
+[per (0fff) tick]
+5ms     1623
+10ms    886
+20ms    1883
+50ms    1070
