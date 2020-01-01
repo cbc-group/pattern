@@ -1,10 +1,10 @@
-illum_start = 276.16m
-illum_end = 49944.213m
+illum_start = 276.16u
+illum_end = 49944.213u
 illum_window = 49668.053 = 49944.213 - 276.16
 
-total_duration = 49999.893m
+total_duration = 49999.893u
 
-total_on_time = 49610.453m
+total_on_time = 49610.453u
 
 illum_window = [illum -> flip -> illum]
 total_on = illum*2
