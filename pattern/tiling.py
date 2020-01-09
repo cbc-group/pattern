@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 import logging
 
 import numpy as np
@@ -73,6 +73,12 @@ class Field(object):
     def data(self):
         return self._data
 
+    @data.setter
+    def data(self, new_data):
+        if self.data.shape != new_data.shape:
+            raise ValueError("shape mismatch")
+        self._data = new_data
+
     @property
     def f_slm(self):
         """Focal length of the SLM imaging lens."""
@@ -101,22 +107,40 @@ class Field(object):
 
     ##
 
-    def cartesian(self):
+    def cartesian_r(self):
         # effective pixel size
         dy, dx = self.slm.pixel_size
         dx /= self.mag
         dy /= self.mag
-        dx = dy = 1
         # grid vector
         ny, nx = self.slm.shape
         vx = np.linspace(-(nx - 1) / 2.0, (nx - 1) / 2.0, nx) * dx
         vy = np.linspace(-(ny - 1) / 2.0, (ny - 1) / 2.0, ny) * dy
         # grid
-        return np.meshgrid(vy, vx)
+        return np.meshgrid(vy, vx, indexing="ij")
 
-    def polar(self):
-        gy, gx = self.cartesian()
+    def polar_r(self):
+        gy, gx = self.cartesian_r()
         return np.hypot(gx, gy)
+
+    def cartesian_k(self):
+        # effective pixel size
+        dy, dx = self.slm.pixel_size
+        dx /= self.mag
+        dy /= self.mag
+        # effective resolution unit
+        ny, nx = self.slm.shape
+        dkx = 2 * np.pi / nx / dx
+        dky = 2 * np.pi / ny / dy
+        # grid vector
+        vkx = np.linspace(-(nx - 1) / 2.0, (nx - 1) / 2.0, nx) * dkx
+        vky = np.linspace(-(ny - 1) / 2.0, (ny - 1) / 2.0, ny) * dky
+        # grid
+        return np.meshgrid(vky, vkx, indexing="ij")
+
+    def polar_k(self):
+        gky, gkx = self.cartesian_k()
+        return np.hypot(gkx, gky)
 
     ##
 
@@ -124,7 +148,7 @@ class Field(object):
         self._data = np.ones(self.slm.shape, np.complex64)
 
 
-class Op(ABCMeta):
+class Op(ABC):
     @abstractmethod
     def __call__(self, field):
         pass
@@ -139,7 +163,24 @@ class AnnularMask(Mask):
         self._d_out, self._d_in = d_out, d_in
 
     def __call__(self, field):
-        pass
+        # distance to effective na
+        c = field.mag / (2 * field.f_slm)
+        od_na, id_na = self.d_out * c, self.d_in * c
+        logger.info(f"NA:{od_na:.4f}, na:{id_na:.4f}")
+
+        # na to frequency domain size
+        c = 2 * np.pi / field.wavelength
+        od_na *= c
+        id_na *= c
+
+        # generate pupil mask
+        mask = field.polar_k()
+        mask = (mask > id_na) & (mask < od_na)
+
+        # apply the mask
+        field.data *= mask
+
+        return field
 
     ##
 
@@ -152,9 +193,6 @@ class AnnularMask(Mask):
         return self._d_out
 
     ##
-
-    def _d_to_na(self, d):
-        
 
 
 class Bessel(Op):
@@ -207,15 +245,24 @@ class Defocus(Op):
 
 
 if __name__ == "__main__":
+    import coloredlogs
     import matplotlib.pyplot as plt
+
+    logging.getLogger("matplotlib").setLevel(logging.ERROR)
+    coloredlogs.install(
+        level="DEBUG", fmt="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S"
+    )
 
     qxga = SLM((1536, 2048), (8.2, 8.2), 1)
     nikon_10x_0p3 = Objective(10, 0.3, 200)
 
     field = Field(qxga, nikon_10x_0p3, 0.488, 500, 60)
 
-    gy, gx = field.cartesian()
-    plt.contourf(gx, gy, field.polar())
+    # for plotter
+    gy, gx = field.cartesian_r()
 
+    mask = AnnularMask(3.824, 2.689)
+    field = mask(field)
+
+    plt.contourf(gx, gy, field.data)
     plt.show()
-
