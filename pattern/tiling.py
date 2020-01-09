@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod
 import logging
 
 import numpy as np
-import pyqtgraph as pg
 
 __all__ = []
 
@@ -26,37 +25,71 @@ class SLM(object):
         return self._shape
 
 
+class Objective(object):
+    def __init__(self, mag, na, f_tube, ri=1.0):
+        self._mag, self._na, self._f_tube = mag, na, f_tube
+        self._ri = ri
+
+    ##
+
+    @property
+    def f(self):
+        """Objective focal length."""
+        return self.f_tube / self.mag
+
+    @property
+    def f_tube(self):
+        """Compatible tube lens focal length."""
+        return self._f_tube
+
+    @property
+    def mag(self):
+        """Magnification."""
+        return self._mag
+
+    @property
+    def na(self):
+        """Numerical aperture."""
+        return self._na
+
+    @property
+    def ri(self):
+        """Refractive index."""
+        return self._ri
+
+
 class Field(object):
-    def __init__(self, slm, wavelength, oversample=1):
-        self._slm = slm
+    def __init__(self, slm, obj, wavelength, f_slm, mag):
+        self._slm, self._obj = slm, obj
         self._wavelength = wavelength
 
-        self._oversample = oversample
+        self._f_slm, self._mag = f_slm, mag
 
         self._init_field()
 
     ##
 
     @property
-    def amplitude(self):
-        return self._amplitude
-
-    @amplitude.setter
-    def amplitude(self, amp):
-        if amp.shape != self.amplitude.shape:
-            raise ValueError("shape mismatch")
-        if amp.dtype != self.amplitude.dtype:
-            logger.warning(f'coerce to "{self.amplitude.dtype}"')
-            amp = amp.astype(self.amplitude.dtype)
-        self._amplitude = amp
+    def data(self):
+        return self._data
 
     @property
-    def oversample(self):
-        return self._oversample
+    def f_slm(self):
+        """Focal length of the SLM imaging lens."""
+        return self._f_slm
 
     @property
-    def phase(self):
-        return self._phase
+    def mag(self):
+        """System overall magnification."""
+        return self._mag
+
+    @property
+    def objective(self):
+        return self._obj
+
+    @property
+    def real(self):
+        return np.real(self.data)
 
     @property
     def slm(self):
@@ -68,14 +101,27 @@ class Field(object):
 
     ##
 
-    def grid(self):
-        pass
+    def cartesian(self):
+        # effective pixel size
+        dy, dx = self.slm.pixel_size
+        dx /= self.mag
+        dy /= self.mag
+        dx = dy = 1
+        # grid vector
+        ny, nx = self.slm.shape
+        vx = np.linspace(-(nx - 1) / 2.0, (nx - 1) / 2.0, nx) * dx
+        vy = np.linspace(-(ny - 1) / 2.0, (ny - 1) / 2.0, ny) * dy
+        # grid
+        return np.meshgrid(vy, vx)
+
+    def polar(self):
+        gy, gx = self.cartesian()
+        return np.hypot(gx, gy)
 
     ##
 
     def _init_field(self):
-        self._amplitude = np.ones(self.slm.shape, np.float32)
-        self._phase = np.zeros_like(self.amplitude)
+        self._data = np.ones(self.slm.shape, np.complex64)
 
 
 class Op(ABCMeta):
@@ -85,6 +131,10 @@ class Op(ABCMeta):
 
 
 class Mask(Op):
+    pass
+
+
+class AnnularMask(Mask):
     def __init__(self, d_out, d_in):
         self._d_out, self._d_in = d_out, d_in
 
@@ -100,6 +150,11 @@ class Mask(Op):
     @property
     def d_out(self):
         return self._d_out
+
+    ##
+
+    def _d_to_na(self, d):
+        
 
 
 class Bessel(Op):
@@ -122,7 +177,16 @@ class Bessel(Op):
     ##
 
 
-class FocusTiling(Op):
+class Lattice(Bessel):
+    def __init__(self, d_out, d_in, n_beam, spacing):
+        super().__init__(d_out, d_in)
+        self._n_beam, self._spacing = n_beam, spacing
+
+    def __call__(self, field):
+        pass
+
+
+class Defocus(Op):
     def __init__(self):
         pass
 
@@ -131,15 +195,27 @@ class FocusTiling(Op):
 
     ##
 
+    @property
+    def n_beam(self):
+        return self._n_beam
+
+    @property
+    def spacing(self):
+        return self._spacing
+
     ##
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
     qxga = SLM((1536, 2048), (8.2, 8.2), 1)
-    field = Field(qxga, 0.488)
+    nikon_10x_0p3 = Objective(10, 0.3, 200)
 
-    annular = (0.64, 0.45)
+    field = Field(qxga, nikon_10x_0p3, 0.488, 500, 60)
 
-    bessel = Bessel(*annular)(field)
-    mask = Mask(*annular)(bessel)
+    gy, gx = field.cartesian()
+    plt.contourf(gx, gy, field.polar())
+
+    plt.show()
 

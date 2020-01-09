@@ -8,13 +8,13 @@ from zipfile import ZipFile
 seq_name = "48071 HHMI 50ms"
 seq_path = os.path.join("Sequences", seq_name, f"{seq_name}.seq11")
 
-image_dir = "C:/Users/Andy/Documents/MATLAB/NA0.4_na0.225/"
+image_dir = "S:/Andy/NA0.22944_na0.16134_47b"
 image_list = glob.glob(os.path.join(image_dir, "*.bmp"))
 
 # sort by tc
-#image_list.sort(key=lambda x: float(Path(x).stem.split("_")[-2][2:]))
+image_list.sort(key=lambda x: float(Path(x).stem.split("_")[-2][2:]))
 # sort by na
-image_list.sort(key=lambda x: float(Path(x).stem.split("_")[3][2:]))
+# image_list.sort(key=lambda x: float(Path(x).stem.split("_")[3][2:]))
 
 rep = StringIO()
 # write sequence
