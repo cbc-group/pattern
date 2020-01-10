@@ -164,7 +164,12 @@ class Field(object):
             cf (float): cropping factor
         """
         slm_field = self.slm_field_ideal()
-        return np.abs(slm_field) > cf
+
+        # remove spurious signals
+        slm_field[np.abs(slm_field) <= cf] = 0
+
+        # sign -> [0, pi]
+        return np.sign(slm_field + 0.001) * np.pi / 2 + np.pi / 2
 
     ##
 
@@ -174,15 +179,16 @@ class Field(object):
         slm_pattern = self.slm_pattern()
         slm_field_bl = np.exp(1j * slm_pattern)
 
-        pupil_field_bl_pre = fftshift(fft2(ifftshift(slm_field_bl)))
-        pupil_field_bl_post = self.mask(pupil_field_bl_pre)
+        temp = fftshift(fft2(ifftshift(slm_field_bl)))
+        pupil_field_bl_pre = temp.copy()
+        pupil_field_bl_post = self.mask(temp)
 
         obj_field = fftshift(fft2(ifftshift(pupil_field_bl_post)))
         intensity = np.square(np.abs(obj_field))
 
-        def imshow(title, image, ratio=0.25):
+        def imshow(title, image, ratio=0.25, **kwargs):
             plt.title(title)
-            plt.imshow(image)
+            plt.imshow(image, cmap="hot", **kwargs)
             plt.axis("scaled")
 
             ny, nx = image.shape
@@ -192,7 +198,7 @@ class Field(object):
 
         plt.figure(1)
         plt.subplot(221)
-        imshow("Ideal SLM Field", slm_field_ideal)
+        imshow("Ideal SLM Field", np.square(slm_field_ideal))
         plt.subplot(222)
         imshow("Final Intensity", intensity)
         plt.subplot(212)
@@ -347,6 +353,9 @@ class Lattice(Bessel):
             )
             lattice += bessel * offset
 
+        # energy conservation # TODO
+        lattice /= n
+
         field.data += lattice
 
         return field
@@ -408,9 +417,6 @@ if __name__ == "__main__":
     nikon_10x_0p3 = Objective(10, 0.3, 200)
 
     field = Field(qxga, mask, nikon_10x_0p3, 0.488, 60)
-
-    # for plotter
-    gy, gx = field.cartesian_r()
 
     lattice = Lattice(3.824, 2.689, 7, 3)
     field = lattice(field)
