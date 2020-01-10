@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import logging
 
 import numpy as np
+from scipy.fftpack import fft2, fftshift, ifftshift
 
 __all__ = []
 
@@ -9,12 +10,17 @@ logger = logging.getLogger(__name__)
 
 
 class SLM(object):
-    def __init__(self, shape, pixel_size, bit_depth):
+    def __init__(self, shape, pixel_size, f_slm):
         self._shape = shape
         self._pixel_size = pixel_size
-        self._bit_depth = bit_depth
+        self._f_slm = f_slm
 
     ##
+
+    @property
+    def f_slm(self):
+        """Focal length of the SLM imaging lens."""
+        return self._f_slm
 
     @property
     def pixel_size(self):
@@ -59,13 +65,14 @@ class Objective(object):
 
 
 class Field(object):
-    def __init__(self, slm, obj, wavelength, f_slm, mag):
-        self._slm, self._obj = slm, obj
+    def __init__(self, slm, mask, obj, wavelength, mag):
+        self._slm, self._mask, self._obj = slm, mask, obj
         self._wavelength = wavelength
 
-        self._f_slm, self._mag = f_slm, mag
+        self._mag = mag
 
         self._init_field()
+        self.mask.calibrate(self)
 
     ##
 
@@ -80,14 +87,13 @@ class Field(object):
         self._data = new_data
 
     @property
-    def f_slm(self):
-        """Focal length of the SLM imaging lens."""
-        return self._f_slm
-
-    @property
     def mag(self):
         """System overall magnification."""
         return self._mag
+
+    @property
+    def mask(self):
+        return self._mask
 
     @property
     def objective(self):
@@ -113,9 +119,9 @@ class Field(object):
         dx /= self.mag
         dy /= self.mag
         # grid vector
-        ny, nx = self.slm.shape
-        vx = np.linspace(-(nx - 1) / 2.0, (nx - 1) / 2.0, nx) * dx
-        vy = np.linspace(-(ny - 1) / 2.0, (ny - 1) / 2.0, ny) * dy
+        n = max(*self.slm.shape)
+        v = np.linspace(-(n - 1) / 2.0, (n - 1) / 2.0, n)
+        vx, vy = v * dx, v * dy
         # grid
         return np.meshgrid(vy, vx, indexing="ij")
 
@@ -129,12 +135,12 @@ class Field(object):
         dx /= self.mag
         dy /= self.mag
         # effective resolution unit
-        ny, nx = self.slm.shape
-        dkx = 2 * np.pi / nx / dx
-        dky = 2 * np.pi / ny / dy
+        n = max(*self.slm.shape)
+        dkx = 2 * np.pi / n / dx
+        dky = 2 * np.pi / n / dy
         # grid vector
-        vkx = np.linspace(-(nx - 1) / 2.0, (nx - 1) / 2.0, nx) * dkx
-        vky = np.linspace(-(ny - 1) / 2.0, (ny - 1) / 2.0, ny) * dky
+        v = np.linspace(-(n - 1) / 2.0, (n - 1) / 2.0, n)
+        vkx, vky = v * dkx, v * dky
         # grid
         return np.meshgrid(vky, vkx, indexing="ij")
 
@@ -144,8 +150,74 @@ class Field(object):
 
     ##
 
+    def slm_field_ideal(self, normalize=True):
+        slm_field = fftshift(fft2(ifftshift(self.data)))
+        slm_field = np.real(slm_field)
+        if normalize:
+            slm_field /= slm_field.max()
+        return slm_field
+
+    def slm_pattern(self, binary=True, cf=0.15):
+        """
+        Args:
+            binary (bool): binary
+            cf (float): cropping factor
+        """
+        slm_field = self.slm_field_ideal()
+        return np.abs(slm_field) > cf
+
+    ##
+
+    def simulate(self):
+        slm_field_ideal = self.slm_field_ideal()
+
+        slm_pattern = self.slm_pattern()
+        slm_field_bl = np.exp(1j * slm_pattern)
+
+        pupil_field_bl_pre = fftshift(fft2(ifftshift(slm_field_bl)))
+        pupil_field_bl_post = self.mask(pupil_field_bl_pre)
+
+        obj_field = fftshift(fft2(ifftshift(pupil_field_bl_post)))
+        intensity = np.square(np.abs(obj_field))
+
+        def imshow(title, image, ratio=0.25):
+            plt.title(title)
+            plt.imshow(image)
+            plt.axis("scaled")
+
+            ny, nx = image.shape
+            cx, cy = nx // 2, ny // 2
+            plt.xlim(cx * (1 - ratio), cx * (1 + ratio))
+            plt.ylim(cy * (1 - ratio), cy * ((1 + ratio)))
+
+        plt.figure(1)
+        plt.subplot(221)
+        imshow("Ideal SLM Field", slm_field_ideal)
+        plt.subplot(222)
+        imshow("Final Intensity", intensity)
+        plt.subplot(212)
+        imshow("SLM Pattern", slm_pattern, ratio=1)
+
+        plt.figure(2)
+        plt.subplot(121)
+        imshow("Pre Mask", np.abs(pupil_field_bl_pre))
+        plt.subplot(122)
+        imshow("Post Mask", np.abs(pupil_field_bl_post))
+
+        plt.show()
+
+    ##
+
     def _init_field(self):
-        self._data = np.ones(self.slm.shape, np.complex64)
+        # use maximum confinement
+        n = max(*self.slm.shape)
+        self._data = np.zeros((n,) * 2, np.complex64)
+
+    def _roi(self):
+        ny0, nx0 = self.slm.shape
+        ny, nx = self.data.shape
+        ox, oy = (nx - nx0) // 2, (ny - ny0) // 2
+        return slice(oy, oy + ny0), slice(ox, ox + nx0)
 
 
 class Op(ABC):
@@ -155,18 +227,56 @@ class Op(ABC):
 
 
 class Mask(Op):
-    pass
+    def __init__(self):
+        self._mask = None
+
+    def __call__(self, field):
+        if isinstance(field, Field):
+            field.data *= self.mask
+        else:
+            field *= self.mask
+        return field
+
+    ##
+
+    @property
+    def mask(self):
+        return self._mask
+
+    ##
+
+    def calibrate(self, field):
+        pass
 
 
 class AnnularMask(Mask):
     def __init__(self, d_out, d_in):
+        super().__init__()
         self._d_out, self._d_in = d_out, d_in
 
-    def __call__(self, field):
+    ##
+
+    @property
+    def d_in(self):
+        return self._d_in
+
+    @property
+    def d_out(self):
+        return self._d_out
+
+    @property
+    def mask(self):
+        if self._mask is None:
+            raise RuntimeError("please calibrate the mask by a field first")
+        return self._mask
+
+    ##
+
+    def calibrate(self, field):
         # distance to effective na
-        c = field.mag / (2 * field.f_slm)
+        c = field.mag / (2 * field.slm.f_slm)
         od_na, id_na = self.d_out * c, self.d_in * c
-        logger.info(f"NA:{od_na:.4f}, na:{id_na:.4f}")
+        logger.info(f"[mask] NA:{od_na:.4f}, na:{id_na:.4f}")
 
         # na to frequency domain size
         c = 2 * np.pi / field.wavelength
@@ -175,11 +285,16 @@ class AnnularMask(Mask):
 
         # generate pupil mask
         mask = field.polar_k()
-        mask = (mask > id_na) & (mask < od_na)
+        self._mask = (mask > id_na) & (mask < od_na)
 
-        # apply the mask
-        field.data *= mask
 
+class Bessel(Op):
+    def __init__(self, d_out, d_in):
+        self._d_out, self._d_in = d_out, d_in
+
+    def __call__(self, field):
+        bessel = self._generate_feature(field)
+        field.data += bessel
         return field
 
     ##
@@ -194,34 +309,61 @@ class AnnularMask(Mask):
 
     ##
 
+    def _generate_feature(self, field):
+        # distance to effective na
+        c = field.mag / (2 * field.slm.f_slm)
+        od_na, id_na = self.d_out * c, self.d_in * c
+        logger.info(f"[bessel] NA:{od_na:.4f}, na:{id_na:.4f}")
 
-class Bessel(Op):
-    def __init__(self, d_out, d_in):
-        self._d_out, self._d_in = d_out, d_in
+        # na to frequency domain size
+        c = 2 * np.pi / field.wavelength
+        od_na *= c
+        id_na *= c
 
-    def __call__(self, field):
-        pass
+        # generate and apply
+        bessel = field.polar_k()
+        bessel = (bessel > id_na) & (bessel < od_na)
 
-    ##
-
-    @property
-    def d_in(self):
-        return self._d_in
-
-    @property
-    def d_out(self):
-        return self._d_out
-
-    ##
+        return bessel
 
 
 class Lattice(Bessel):
-    def __init__(self, d_out, d_in, n_beam, spacing):
+    def __init__(self, d_out, d_in, n_beam, spacing, tilt=0.0):
         super().__init__(d_out, d_in)
-        self._n_beam, self._spacing = n_beam, spacing
+        self._n_beam, self._spacing, self._tilt = n_beam, spacing, tilt
 
     def __call__(self, field):
-        pass
+        bessel = self._generate_feature(field)
+
+        # generate position index
+        n = self.n_beam
+        offsets = np.linspace(-(n - 1) / 2.0, (n - 1) / 2.0, n) * self.spacing
+        ky, kx = field.cartesian_k()
+        lattice = np.zeros_like(field.data)
+        for offset in offsets:
+            logging.debug(f"offset:{offset}")
+            offset = np.exp(
+                1j * offset * (kx * np.cos(self.tilt) + ky * np.sin(self.tilt))
+            )
+            lattice += bessel * offset
+
+        field.data += lattice
+
+        return field
+
+    ##
+
+    @property
+    def n_beam(self):
+        return self._n_beam
+
+    @property
+    def spacing(self):
+        return self._spacing
+
+    @property
+    def tilt(self):
+        return self._tilt
 
 
 class Defocus(Op):
@@ -244,6 +386,14 @@ class Defocus(Op):
     ##
 
 
+def preview(x, y, z, cmap=None):
+    if not cmap:
+        cmap = "binary" if z.dtype == np.bool else "hot"
+    plt.pcolormesh(x, y, z, cmap=cmap)
+    plt.axis("scaled")
+    plt.show()
+
+
 if __name__ == "__main__":
     import coloredlogs
     import matplotlib.pyplot as plt
@@ -253,16 +403,18 @@ if __name__ == "__main__":
         level="DEBUG", fmt="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S"
     )
 
-    qxga = SLM((1536, 2048), (8.2, 8.2), 1)
+    qxga = SLM((1536, 2048), (8.2, 8.2), 500)
+    mask = AnnularMask(3.824, 2.689)
     nikon_10x_0p3 = Objective(10, 0.3, 200)
 
-    field = Field(qxga, nikon_10x_0p3, 0.488, 500, 60)
+    field = Field(qxga, mask, nikon_10x_0p3, 0.488, 60)
 
     # for plotter
     gy, gx = field.cartesian_r()
 
-    mask = AnnularMask(3.824, 2.689)
-    field = mask(field)
+    lattice = Lattice(3.824, 2.689, 7, 3)
+    field = lattice(field)
+    # bessel = Bessel(3.824, 2.689)
+    # field = bessel(field)
 
-    plt.contourf(gx, gy, field.data)
-    plt.show()
+    field.simulate()
