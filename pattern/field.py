@@ -134,7 +134,7 @@ class Field(object):
         pupil_field_bl_post = self.mask(temp)
 
         obj_field = fftshift(fft2(ifftshift(pupil_field_bl_post)))
-        intensity = np.square(obj_field)
+        intensity = field2intensity(obj_field)
 
         def imshow(title, image, ratio=0.25, **kwargs):
             if title:
