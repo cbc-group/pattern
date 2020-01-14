@@ -104,7 +104,7 @@ class Field(object):
             slm_field /= slm_field.max()
         return slm_field
 
-    def slm_pattern(self, binary=True, cf=0.15, crop=True):
+    def slm_pattern(self, binary=True, cf=0.15, crop=True, ideal=False):
         """
         Args:
             binary (bool): binary
@@ -114,15 +114,53 @@ class Field(object):
 
         # remove spurious signals
         slm_field[np.abs(slm_field) <= cf] = 0
+        # remove out-of-bound features
+        if not ideal:
+            mask = np.ones_like(slm_field)
+            mask[self._roi()] = 0
+            slm_field *= mask
 
+        # binarize
         slm_pattern = np.sign(slm_field) >= 0
+
+        # crop to fit size
         if crop:
             slm_pattern = slm_pattern[self._roi()]
+            
         return slm_pattern
 
     ##
 
-    def simulate(self):
+    def simulate(self, ideal=False, cf=0.05):
+        """
+        slm_field
+
+        pre_mask_field
+        post_mask_field
+
+        obj_field
+        """
+        results = dict()
+
+        if ideal:
+            slm_field = self.slm_field_ideal()
+        else:
+            # simulation requires no-crop
+            slm_pattern = self.slm_pattern(cf=cf, crop=False)
+            results["slm_pattern"] = slm_pattern
+            slm_field = np.exp(1j * slm_pattern * np.pi)
+        results["slm_field"] = slm_field
+
+        pre_mask_field = fftshift(fft2(ifftshift(slm_field)))
+        results["pre_mask_field"] = pre_mask_field
+        post_mask_field = self.mask(pre_mask_field.copy())  # replicate the result
+        results["post_mask_field"] = post_mask_field
+
+        obj_field = fftshift(fft2(ifftshift(post_mask_field)))
+        results["obj_field"] = obj_field
+
+        ##
+
         slm_field_ideal = self.slm_field_ideal()
 
         # simluation requires no-crop
@@ -147,12 +185,14 @@ class Field(object):
             plt.xlim(cx * (1 - ratio), cx * (1 + ratio))
             plt.ylim(cy * (1 - ratio), cy * ((1 + ratio)))
 
-        plt.figure("SLM")
+        plt.figure("Lateral Profile")
         plt.subplot(121)
         imshow("Ideal", np.square(slm_field_ideal))
         plt.subplot(122)
         imshow("Generated", intensity)
 
+        plt.figure("Axial Profile")
+        imshow("Generated")
         # cropped
         slm_pattern = self.slm_pattern(cf=0.01, crop=True)
 
