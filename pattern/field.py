@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fftpack import fft2, fftshift, ifftshift
 
-from pattern.utils import field2intensity
+from pattern.utils import field2intensity, imshow
 
 __all__ = ["Field"]
 
@@ -97,6 +97,20 @@ class Field(object):
 
     ##
 
+    def kz(self):
+        gr = self.polar_r()
+        kz2 = np.square(2 * np.pi / self.wavelength) - np.square(gr)
+        n_neg = len(kz2 < 0)
+        if n_neg > 0:
+            logger.warning(
+                f"SLM total area exceeds annulus confinement ({n_neg} element(s))"
+            )
+        kz2[kz2 < 0] = 0
+        kz = np.sqrt(kz2)
+        return kz
+
+    ##
+
     def slm_field_ideal(self, normalize=True):
         slm_field = fftshift(fft2(ifftshift(self.data)))
         slm_field = np.real(slm_field)
@@ -115,10 +129,10 @@ class Field(object):
         # remove spurious signals
         slm_field[np.abs(slm_field) <= cf] = 0
         # remove out-of-bound features
-        if not ideal:
-            mask = np.ones_like(slm_field)
-            mask[self._roi()] = 0
-            slm_field *= mask
+        # if not ideal:
+        #    mask = np.ones_like(slm_field)
+        #    mask[self._roi()] = 0
+        #    slm_field *= mask
 
         # binarize
         slm_pattern = np.sign(slm_field) >= 0
@@ -126,12 +140,12 @@ class Field(object):
         # crop to fit size
         if crop:
             slm_pattern = slm_pattern[self._roi()]
-            
+
         return slm_pattern
 
     ##
 
-    def simulate(self, ideal=False, cf=0.05):
+    def simulate(self, cf=0.05, zrange=(-30, 30), zstep=0.1):
         """
         slm_field
 
@@ -140,76 +154,56 @@ class Field(object):
 
         obj_field
         """
-        results = dict()
-
-        if ideal:
-            slm_field = self.slm_field_ideal()
-        else:
-            # simulation requires no-crop
-            slm_pattern = self.slm_pattern(cf=cf, crop=False)
-            results["slm_pattern"] = slm_pattern
-            slm_field = np.exp(1j * slm_pattern * np.pi)
-        results["slm_field"] = slm_field
-
-        pre_mask_field = fftshift(fft2(ifftshift(slm_field)))
-        results["pre_mask_field"] = pre_mask_field
-        post_mask_field = self.mask(pre_mask_field.copy())  # replicate the result
-        results["post_mask_field"] = post_mask_field
-
-        obj_field = fftshift(fft2(ifftshift(post_mask_field)))
-        results["obj_field"] = obj_field
-
-        ##
-
-        slm_field_ideal = self.slm_field_ideal()
-
-        # simluation requires no-crop
-        slm_pattern = self.slm_pattern(cf=0.01, crop=False)
+        # pattern
+        slm_pattern = self.slm_pattern(cf=cf, crop=False)  # simluation requires no-crop
         slm_field_bl = np.exp(1j * slm_pattern * np.pi)
 
-        temp = fftshift(fft2(ifftshift(slm_field_bl)))
-        pupil_field_bl_pre = temp.copy()
-        pupil_field_bl_post = self.mask(temp)
-
-        obj_field = fftshift(fft2(ifftshift(pupil_field_bl_post)))
-        intensity = field2intensity(obj_field)
-
-        def imshow(title, image, ratio=0.25, **kwargs):
-            if title:
-                plt.title(title)
-            plt.imshow(image, cmap="hot", **kwargs)
-            plt.axis("scaled")
-
-            ny, nx = image.shape
-            cx, cy = nx // 2, ny // 2
-            plt.xlim(cx * (1 - ratio), cx * (1 + ratio))
-            plt.ylim(cy * (1 - ratio), cy * ((1 + ratio)))
-
-        plt.figure("Lateral Profile")
-        plt.subplot(121)
-        imshow("Ideal", np.square(slm_field_ideal))
-        plt.subplot(122)
-        imshow("Generated", intensity)
-
-        plt.figure("Axial Profile")
-        imshow("Generated")
-        # cropped
-        slm_pattern = self.slm_pattern(cf=0.01, crop=True)
-
         plt.figure("Pattern")
-        imshow(None, slm_pattern, ratio=1)
+        imshow(None, slm_pattern[self._roi()], cmap="binary")
 
-        pupil_field_bl_pre = field2intensity(pupil_field_bl_pre)
-        pupil_field_bl_post = field2intensity(pupil_field_bl_post)
-        # match scale of post
-        vmin, vmax = tuple(np.percentile(pupil_field_bl_post, [0.01, 99.99]))
-        logger.debug(f"vmin:{vmin}, vmax:{vmax}")
+        # mask
+        pupil_field_bl_pre = fftshift(fft2(ifftshift(slm_field_bl)))
+        pre_mask = field2intensity(pupil_field_bl_pre)
+        pupil_field_bl_post = self.mask(pupil_field_bl_pre)
+        post_mask = field2intensity(pupil_field_bl_post)
+
+        vmin, vmax = tuple(np.percentile(post_mask, [0.01, 99.99]))
+        logger.debug(f"vmin:{vmin:.4f}, vmax:{vmax:.4f}")
+
         plt.figure("Mask")
         plt.subplot(121)
-        imshow("Pre", pupil_field_bl_pre, vmin=vmin, vmax=vmax)
+        imshow("Pre", pre_mask, vmin=vmin, vmax=vmax)
         plt.subplot(122)
-        imshow("Post", pupil_field_bl_post, vmin=vmin, vmax=vmax)
+        imshow("Post", post_mask, vmin=vmin, vmax=vmax)
 
+        # slm
+        slm_field_ideal = self.slm_field_ideal()
+        ideal = field2intensity(slm_field_ideal)
+
+        obj_field = fftshift(fft2(ifftshift(pupil_field_bl_post)))
+        bl = field2intensity(obj_field)
+
+        plt.figure("SLM")
+        plt.subplot(121)
+        imshow("Ideal", ideal)
+        plt.subplot(122)
+        imshow("Generated", bl)
+
+        # axial
+        z = np.arange(zrange[0], zrange[1], step=zstep)
+        axial = np.zeros((pupil_field_bl_post.shape[0], len(z)), dtype=bl.dtype)  # YZ
+        kz = self.kz()
+        for i, iz in enumerate(z):
+            print(iz)
+            field = pupil_field_bl_post * np.exp(1j * kz * iz)
+            field = fftshift(fft2(ifftshift(field)))
+            intensity = field2intensity(field)
+            axial[:, i] = intensity[:, intensity.shape[1] // 2]
+
+        plt.figure("Axial Profile")
+        imshow(None, axial)
+
+        # .. display
         plt.show()
 
     ##

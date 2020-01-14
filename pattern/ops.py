@@ -101,32 +101,13 @@ class Lattice(Bessel):
 
 
 class Defocus(Op):
-    def __init__(self, focus, weights=None):
-        if weights is None:
-            weights = (1,) * len(focus)
-        self._focus, self._weights = tuple(focus), tuple(weights)
+    def __init__(self, focus):
+        self._focus = focus
 
     def __call__(self, field):
-        # template and workspace
-        field_template = field.data
-        field_sum = np.zeros_like(field.data)
         # focal axis resolution
-        gr = field.polar_r()
-        print(gr.dtype)
-        print(gr.shape)
-        # pre-filter
-        kz2 = np.square(2 * np.pi / field.wavelength) - np.square(gr)
-        n_neg = len(kz2 < 0)
-        if n_neg > 0:
-            logger.warning(
-                f"SLM total area exceeds annulus confinement ({n_neg} element(s))"
-            )
-        kz2[kz2 < 0] = 0
-        kz = np.sqrt(kz2)
-        # iterate over weights
-        for f, w in zip(self.focus, self.weights):
-            field_sum += field_template * w * np.exp(1j * kz * f)
-        field.data = field_sum
+        kz = field.kz()
+        field.data *= np.exp(1j * kz * self.focus)
         return field
 
     ##
