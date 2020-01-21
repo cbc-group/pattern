@@ -98,7 +98,7 @@ class Field(object):
     ##
 
     def kz(self):
-        gr = self.polar_r()
+        gr = self.polar_k()
         kz2 = np.square(2 * np.pi / self.wavelength) - np.square(gr)
         n_neg = len(kz2 < 0)
         if n_neg > 0:
@@ -129,10 +129,10 @@ class Field(object):
         # remove spurious signals
         slm_field[np.abs(slm_field) <= cf] = 0
         # remove out-of-bound features
-        # if not ideal:
-        #    mask = np.ones_like(slm_field)
-        #    mask[self._roi()] = 0
-        #    slm_field *= mask
+        if not ideal:
+            mask = np.zeros_like(slm_field)
+            mask[self._roi()] = 1
+            slm_field *= mask
 
         # binarize
         slm_pattern = np.sign(slm_field) >= 0
@@ -194,7 +194,7 @@ class Field(object):
         axial = np.zeros((pupil_field_bl_post.shape[0], len(z)), dtype=bl.dtype)  # YZ
         kz = self.kz()
         for i, iz in enumerate(z):
-            print(iz)
+            print(f"{i}, z={iz}um")
             field = pupil_field_bl_post * np.exp(1j * kz * iz)
             field = fftshift(fft2(ifftshift(field)))
             intensity = field2intensity(field)
@@ -202,6 +202,7 @@ class Field(object):
 
         plt.figure("Axial Profile")
         imshow(None, axial)
+        
 
         # .. display
         plt.show()
