@@ -1324,6 +1324,9 @@
     </property>
    </widget>
    <widget class="QSpinBox" name="fill_screen_spinbox">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>150</x>

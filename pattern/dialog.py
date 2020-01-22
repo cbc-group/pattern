@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'dialog.ui',
 # licensing of 'dialog.ui' applies.
 #
-# Created: Wed Jan 22 18:03:52 2020
+# Created: Wed Jan 22 18:23:27 2020
 #      by: pyside2-uic  running on PySide2 5.12.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -477,6 +477,7 @@ class Ui_Dialog(object):
         self.line.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line.setObjectName("line")
         self.fill_screen_spinbox = QtWidgets.QSpinBox(self.linear_bessel_array_parameters)
+        self.fill_screen_spinbox.setEnabled(False)
         self.fill_screen_spinbox.setGeometry(QtCore.QRect(150, 70, 81, 21))
         font = QtGui.QFont()
         font.setPointSize(10)

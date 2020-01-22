@@ -54,11 +54,13 @@ class Bessel(Op):
         c = 2 * np.pi / field.wavelength
         od_na = c * self.na_out
         id_na = c * self.na_in
+        print(c)
 
         # generate and apply
         bessel = field.polar_k()
+        print(bessel)
         bessel = (bessel > id_na) & (bessel < od_na)
-
+        print(bessel)
         return bessel
 
 

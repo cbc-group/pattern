@@ -42,7 +42,7 @@ class Dialog(QMainWindow):
             "objective": self._update_objective,
         }
         for name, func in init_funcs.items():
-            if not hasattr(self, f'_{name}'):
+            if not hasattr(self, f"_{name}"):
                 logger.debug(f'implicit update "{name}"')
                 func()
 
@@ -51,8 +51,9 @@ class Dialog(QMainWindow):
 
         from pattern import Bessel
 
+        print(field.data)
         field = Bessel(3.824, 2.689)(field)
-
+        print(field.data)
         results = field.simulate()
 
         image = pq.ImageItem(results["ideal"])
@@ -132,6 +133,9 @@ class Dialog(QMainWindow):
         self.ui.bessel_parameters.toggled.connect(self._toggle_bessel_array)
         self.ui.same_as_mask.toggled.connect(self._toggle_same_as_mask)
 
+        self.ui.fill_screen_checkbox.toggled.connect(self._toggle_fill_screen)
+        self.ui.auto_spacing.toggled.connect(self._toggle_auto_spacing)
+
     def _setup_tiling_parameters(self):
         pass
 
@@ -188,6 +192,12 @@ class Dialog(QMainWindow):
     def _toggle_same_as_mask(self, active):
         self.ui.bessel_od_spinbox.setEnabled(not active)
         self.ui.bessel_id_spinbox.setEnabled(not active)
+
+    def _toggle_fill_screen(self, active):
+        self.ui.fill_screen_spinbox.setEnabled(active)
+
+    def _toggle_auto_spacing(self, active):
+        self.ui.spacing_spinbox.setEnabled(not active)
 
 
 if __name__ == "__main__":
