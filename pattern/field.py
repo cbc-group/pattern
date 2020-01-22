@@ -1,6 +1,6 @@
 import logging
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fftpack import fft2, fftshift, ifftshift
 
