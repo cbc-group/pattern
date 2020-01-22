@@ -202,7 +202,7 @@ class Field(object):
 
         plt.figure("Axial Profile")
         imshow(None, axial)
-        
+        plt.gca().set_aspect(self.slm.pixel_size[1] / zstep)
 
         # .. display
         plt.show()

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
-    <height>720</height>
+    <width>1290</width>
+    <height>730</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,8 +18,8 @@
     <rect>
      <x>570</x>
      <y>10</y>
-     <width>701</width>
-     <height>701</height>
+     <width>711</width>
+     <height>711</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="preview_layout">
@@ -39,16 +39,151 @@
      <number>10</number>
     </property>
     <item row="0" column="1">
-     <widget class="QWidget" name="generated" native="true"/>
+     <widget class="QWidget" name="generated" native="true">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(0, 0, 0);</string>
+      </property>
+      <widget class="QLabel" name="mask_id_na_3">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(255, 255, 255);</string>
+       </property>
+       <property name="text">
+        <string> Generated</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </widget>
     </item>
     <item row="0" column="0">
-     <widget class="QWidget" name="ideal" native="true"/>
+     <widget class="QWidget" name="ideal" native="true">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(0, 0, 0);</string>
+      </property>
+      <widget class="QLabel" name="mask_id_na_2">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>51</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(255, 255, 255);</string>
+       </property>
+       <property name="text">
+        <string> Ideal</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </widget>
     </item>
     <item row="1" column="0">
-     <widget class="QWidget" name="pre_mask" native="true"/>
+     <widget class="QWidget" name="pre_mask" native="true">
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(0, 0, 0);</string>
+      </property>
+      <widget class="QLabel" name="mask_id_na_4">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(255, 255, 255);</string>
+       </property>
+       <property name="text">
+        <string> Pre-Mask</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </widget>
     </item>
     <item row="1" column="1">
-     <widget class="QWidget" name="post_mask" native="true"/>
+     <widget class="QWidget" name="post_mask" native="true">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(0, 0, 0);</string>
+      </property>
+      <widget class="QLabel" name="mask_id_na_5">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>81</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: rgb(255, 255, 255);</string>
+       </property>
+       <property name="text">
+        <string> Post-Mask</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -117,7 +252,7 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="pixel_size_spinbox">
+   <widget class="QDoubleSpinBox" name="pixel_size_spinbox">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -133,6 +268,21 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="buttonSymbols">
+     <enum>QAbstractSpinBox::UpDownArrows</enum>
+    </property>
+    <property name="decimals">
+     <number>1</number>
+    </property>
+    <property name="minimum">
+     <double>1.000000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>100.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.100000000000000</double>
     </property>
    </widget>
    <widget class="QLabel" name="focal_length_label">
@@ -175,6 +325,12 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="maximum">
+     <number>1000</number>
+    </property>
+    <property name="value">
+     <number>500</number>
     </property>
    </widget>
    <widget class="QComboBox" name="screensize_combobox">
@@ -246,8 +402,14 @@
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
+    <property name="maximum">
+     <number>100</number>
+    </property>
+    <property name="value">
+     <number>10</number>
+    </property>
    </widget>
-   <widget class="QLabel" name="na_label">
+   <widget class="QLabel" name="objective_na_label">
     <property name="geometry">
      <rect>
       <x>30</x>
@@ -271,7 +433,7 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="na_spinbox">
+   <widget class="QDoubleSpinBox" name="objective_na_spinbox">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -287,6 +449,15 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="maximum">
+     <double>2.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.010000000000000</double>
+    </property>
+    <property name="value">
+     <double>0.250000000000000</double>
     </property>
    </widget>
    <widget class="QSpinBox" name="tube_lens_spinbox">
@@ -305,6 +476,15 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="maximum">
+     <number>1000</number>
+    </property>
+    <property name="singleStep">
+     <number>1</number>
+    </property>
+    <property name="value">
+     <number>200</number>
     </property>
    </widget>
    <widget class="QLabel" name="tube_lens_label">
@@ -373,7 +553,7 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="mask_od_spinbox">
+   <widget class="QDoubleSpinBox" name="mask_od_spinbox">
     <property name="geometry">
      <rect>
       <x>90</x>
@@ -389,6 +569,18 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="decimals">
+     <number>3</number>
+    </property>
+    <property name="maximum">
+     <double>5.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.001000000000000</double>
+    </property>
+    <property name="value">
+     <double>3.824000000000000</double>
     </property>
    </widget>
    <widget class="QLabel" name="mask_id_label">
@@ -415,7 +607,7 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="mask_id_spinbox">
+   <widget class="QDoubleSpinBox" name="mask_id_spinbox">
     <property name="geometry">
      <rect>
       <x>90</x>
@@ -431,6 +623,18 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="decimals">
+     <number>3</number>
+    </property>
+    <property name="maximum">
+     <double>5.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.001000000000000</double>
+    </property>
+    <property name="value">
+     <double>2.689000000000000</double>
     </property>
    </widget>
    <widget class="QLabel" name="mask_od_na">
@@ -451,7 +655,7 @@
      <enum>Qt::LeftToRight</enum>
     </property>
     <property name="text">
-     <string>0.2294</string>
+     <string>-</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -475,13 +679,16 @@
      <enum>Qt::LeftToRight</enum>
     </property>
     <property name="text">
-     <string>0.1613</string>
+     <string>-</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
    <widget class="QPushButton" name="from_mask_file">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>110</x>
@@ -558,6 +765,15 @@
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
+    <property name="minimum">
+     <number>350</number>
+    </property>
+    <property name="maximum">
+     <number>1500</number>
+    </property>
+    <property name="value">
+     <number>488</number>
+    </property>
    </widget>
    <widget class="QLabel" name="system_magnification_label">
     <property name="geometry">
@@ -583,7 +799,7 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="system_magnification_spinbox">
+   <widget class="QDoubleSpinBox" name="system_magnification_spinbox">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -599,6 +815,18 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="decimals">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <double>500.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.100000000000000</double>
+    </property>
+    <property name="value">
+     <double>60.000000000000000</double>
     </property>
    </widget>
   </widget>
@@ -626,7 +854,7 @@
     <bool>true</bool>
    </property>
    <property name="checked">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <widget class="QLabel" name="bessel_od_label">
     <property name="geometry">
@@ -652,7 +880,10 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="bessel_od_spinbox">
+   <widget class="QDoubleSpinBox" name="bessel_od_spinbox">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>90</x>
@@ -668,6 +899,18 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="decimals">
+     <number>3</number>
+    </property>
+    <property name="maximum">
+     <double>10.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.001000000000000</double>
+    </property>
+    <property name="value">
+     <double>3.824000000000000</double>
     </property>
    </widget>
    <widget class="QLabel" name="bessel_id_label">
@@ -694,7 +937,10 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="bessel_id_spinbox">
+   <widget class="QDoubleSpinBox" name="bessel_id_spinbox">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>90</x>
@@ -710,6 +956,18 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="decimals">
+     <number>3</number>
+    </property>
+    <property name="maximum">
+     <double>10.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.001000000000000</double>
+    </property>
+    <property name="value">
+     <double>2.689000000000000</double>
     </property>
    </widget>
    <widget class="QLabel" name="bessel_od_na">
@@ -730,7 +988,7 @@
      <enum>Qt::LeftToRight</enum>
     </property>
     <property name="text">
-     <string>0.2294</string>
+     <string>-</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -754,7 +1012,7 @@
      <enum>Qt::LeftToRight</enum>
     </property>
     <property name="text">
-     <string>0.1613</string>
+     <string>-</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
@@ -771,6 +1029,9 @@
     </property>
     <property name="text">
      <string>Same as mask</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
@@ -790,6 +1051,9 @@
    </property>
    <property name="title">
     <string> Linear Bessel Array </string>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
    </property>
    <property name="checkable">
     <bool>true</bool>
@@ -838,6 +1102,12 @@
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>100</number>
+    </property>
    </widget>
    <widget class="QLabel" name="spacing_label">
     <property name="geometry">
@@ -863,7 +1133,7 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="spacing_spinbox">
+   <widget class="QDoubleSpinBox" name="spacing_spinbox">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -879,6 +1149,18 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="decimals">
+     <number>3</number>
+    </property>
+    <property name="maximum">
+     <double>100.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.001000000000000</double>
+    </property>
+    <property name="value">
+     <double>1.000000000000000</double>
     </property>
    </widget>
    <widget class="QCheckBox" name="auto_spacing">
@@ -937,13 +1219,19 @@
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
+    <property name="maximum">
+     <number>100</number>
+    </property>
+    <property name="value">
+     <number>50</number>
+    </property>
    </widget>
   </widget>
   <widget class="QGroupBox" name="binarize_parameters">
    <property name="geometry">
     <rect>
-     <x>300</x>
-     <y>410</y>
+     <x>20</x>
+     <y>610</y>
      <width>251</width>
      <height>101</height>
     </rect>
@@ -986,7 +1274,7 @@
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QSpinBox" name="cropping_factor_spinbox">
+   <widget class="QDoubleSpinBox" name="cropping_factor_spinbox">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -1002,6 +1290,15 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
+    </property>
+    <property name="maximum">
+     <double>1.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>0.010000000000000</double>
+    </property>
+    <property name="value">
+     <double>0.050000000000000</double>
     </property>
    </widget>
    <widget class="QCheckBox" name="simple_threshold">
@@ -1021,6 +1318,104 @@
     </property>
     <property name="tristate">
      <bool>false</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="regenerate">
+   <property name="geometry">
+    <rect>
+     <x>420</x>
+     <y>500</y>
+     <width>121</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Regenerate</string>
+   </property>
+  </widget>
+  <widget class="QGroupBox" name="tiling_parameters">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>410</y>
+     <width>251</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="title">
+    <string> Tiling </string>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
+   </property>
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <widget class="QSpinBox" name="wavelength_spinbox_2">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>30</y>
+      <width>81</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+    <property name="minimum">
+     <number>350</number>
+    </property>
+    <property name="maximum">
+     <number>1500</number>
+    </property>
+    <property name="value">
+     <number>488</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="wavelength_label_2">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>30</y>
+      <width>121</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Focus (um):</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
   </widget>
