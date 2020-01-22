@@ -8,7 +8,7 @@ from zipfile import ZipFile
 seq_name = "48071 HHMI 50ms"
 seq_path = os.path.join("Sequences", seq_name, f"{seq_name}.seq11")
 
-image_dir = "S:/Andy/NA0.22944_na0.16134_45b"
+image_dir = "C:/Users/Andy/Documents/MATLAB/_tiling_batch/NA0.2294_na0.1613_45b"
 image_list = glob.glob(os.path.join(image_dir, "*.bmp"))
 
 # sort by tc
@@ -51,7 +51,7 @@ for i, _ in enumerate(image_list):
 rep.write("}\n")
 rep.write("]\n")
 
-rep.write('"Standard"\n')
+rep.write('"Without Tc"\n')
 rep.write("[HWA s\n")
 rep.write("<")
 rep.write("t")

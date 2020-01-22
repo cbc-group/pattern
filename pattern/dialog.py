@@ -15,6 +15,8 @@ from PySide2.QtGui import (QBrush, QColor, QConicalGradient, QFont,
     QRadialGradient)
 from PySide2.QtWidgets import *
 
+from pyqtgraph import GraphicsView
+
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if Dialog.objectName():
@@ -27,62 +29,61 @@ class Ui_Dialog(object):
         self.preview_layout.setSpacing(10)
         self.preview_layout.setObjectName(u"preview_layout")
         self.preview_layout.setContentsMargins(10, 10, 10, 10)
-        self.generated = QWidget(self.gridLayoutWidget)
-        self.generated.setObjectName(u"generated")
-        self.generated.setStyleSheet(u"background-color: rgb(0, 0, 0);")
-        self.mask_id_na_3 = QLabel(self.generated)
-        self.mask_id_na_3.setObjectName(u"mask_id_na_3")
-        self.mask_id_na_3.setGeometry(QRect(0, 0, 81, 21))
-        font = QFont()
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75);
-        self.mask_id_na_3.setFont(font)
-        self.mask_id_na_3.setLayoutDirection(Qt.LeftToRight)
-        self.mask_id_na_3.setStyleSheet(u"color: rgb(255, 255, 255);")
-        self.mask_id_na_3.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
-
-        self.preview_layout.addWidget(self.generated, 0, 1, 1, 1)
-
-        self.ideal = QWidget(self.gridLayoutWidget)
-        self.ideal.setObjectName(u"ideal")
-        self.ideal.setStyleSheet(u"background-color: rgb(0, 0, 0);")
-        self.mask_id_na_2 = QLabel(self.ideal)
-        self.mask_id_na_2.setObjectName(u"mask_id_na_2")
-        self.mask_id_na_2.setGeometry(QRect(0, 0, 51, 21))
-        self.mask_id_na_2.setFont(font)
-        self.mask_id_na_2.setLayoutDirection(Qt.LeftToRight)
-        self.mask_id_na_2.setStyleSheet(u"color: rgb(255, 255, 255);")
-        self.mask_id_na_2.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
-
-        self.preview_layout.addWidget(self.ideal, 0, 0, 1, 1)
-
         self.pre_mask = QWidget(self.gridLayoutWidget)
         self.pre_mask.setObjectName(u"pre_mask")
         self.pre_mask.setAutoFillBackground(False)
         self.pre_mask.setStyleSheet(u"background-color: rgb(0, 0, 0);")
-        self.mask_id_na_4 = QLabel(self.pre_mask)
-        self.mask_id_na_4.setObjectName(u"mask_id_na_4")
-        self.mask_id_na_4.setGeometry(QRect(0, 0, 81, 21))
-        self.mask_id_na_4.setFont(font)
-        self.mask_id_na_4.setLayoutDirection(Qt.LeftToRight)
-        self.mask_id_na_4.setStyleSheet(u"color: rgb(255, 255, 255);")
-        self.mask_id_na_4.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+        self.pre_mask_label = QLabel(self.pre_mask)
+        self.pre_mask_label.setObjectName(u"pre_mask_label")
+        self.pre_mask_label.setGeometry(QRect(0, 0, 81, 21))
+        font = QFont()
+        font.setPointSize(10)
+        font.setBold(True)
+        font.setWeight(75);
+        self.pre_mask_label.setFont(font)
+        self.pre_mask_label.setLayoutDirection(Qt.LeftToRight)
+        self.pre_mask_label.setStyleSheet(u"color: rgb(255, 255, 255);")
+        self.pre_mask_label.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
 
         self.preview_layout.addWidget(self.pre_mask, 1, 0, 1, 1)
 
         self.post_mask = QWidget(self.gridLayoutWidget)
         self.post_mask.setObjectName(u"post_mask")
         self.post_mask.setStyleSheet(u"background-color: rgb(0, 0, 0);")
-        self.mask_id_na_5 = QLabel(self.post_mask)
-        self.mask_id_na_5.setObjectName(u"mask_id_na_5")
-        self.mask_id_na_5.setGeometry(QRect(0, 0, 81, 21))
-        self.mask_id_na_5.setFont(font)
-        self.mask_id_na_5.setLayoutDirection(Qt.LeftToRight)
-        self.mask_id_na_5.setStyleSheet(u"color: rgb(255, 255, 255);")
-        self.mask_id_na_5.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+        self.post_mask_label = QLabel(self.post_mask)
+        self.post_mask_label.setObjectName(u"post_mask_label")
+        self.post_mask_label.setGeometry(QRect(0, 0, 81, 21))
+        self.post_mask_label.setFont(font)
+        self.post_mask_label.setLayoutDirection(Qt.LeftToRight)
+        self.post_mask_label.setStyleSheet(u"color: rgb(255, 255, 255);")
+        self.post_mask_label.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
 
-        self.preview_layout.addWidget(self.post_mask, 1, 1, 1, 1)
+        self.preview_layout.addWidget(self.post_mask, 1, 2, 1, 1)
+
+        self.ideal = GraphicsView(self.gridLayoutWidget)
+        self.ideal.setObjectName(u"ideal")
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.ideal.sizePolicy().hasHeightForWidth())
+        self.ideal.setSizePolicy(sizePolicy)
+        self.ideal.setAcceptDrops(False)
+        self.ideal.setStyleSheet(u"background-color: rgb(0, 0, 0);")
+        
+        self.preview_layout.addWidget(self.ideal, 0, 0, 1, 1)
+
+        self.generated = QWidget(self.gridLayoutWidget)
+        self.generated.setObjectName(u"generated")
+        self.generated.setStyleSheet(u"background-color: rgb(0, 0, 0);")
+        self.generated_label = QLabel(self.generated)
+        self.generated_label.setObjectName(u"generated_label")
+        self.generated_label.setGeometry(QRect(0, 0, 81, 21))
+        self.generated_label.setFont(font)
+        self.generated_label.setLayoutDirection(Qt.LeftToRight)
+        self.generated_label.setStyleSheet(u"color: rgb(255, 255, 255);")
+        self.generated_label.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+
+        self.preview_layout.addWidget(self.generated, 0, 2, 1, 1)
 
         self.slm_parameters = QGroupBox(Dialog)
         self.slm_parameters.setObjectName(u"slm_parameters")
@@ -423,10 +424,9 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
-        self.mask_id_na_3.setText(QCoreApplication.translate("Dialog", u" Generated", None))
-        self.mask_id_na_2.setText(QCoreApplication.translate("Dialog", u" Ideal", None))
-        self.mask_id_na_4.setText(QCoreApplication.translate("Dialog", u" Pre-Mask", None))
-        self.mask_id_na_5.setText(QCoreApplication.translate("Dialog", u" Post-Mask", None))
+        self.pre_mask_label.setText(QCoreApplication.translate("Dialog", u" Pre-Mask", None))
+        self.post_mask_label.setText(QCoreApplication.translate("Dialog", u" Post-Mask", None))
+        self.generated_label.setText(QCoreApplication.translate("Dialog", u" Generated", None))
         self.slm_parameters.setTitle(QCoreApplication.translate("Dialog", u" SLM ", None))
         self.screen_size_label.setText(QCoreApplication.translate("Dialog", u"Screen Size:", None))
         self.pixel_size_label.setText(QCoreApplication.translate("Dialog", u"Pixel Size (um):", None))

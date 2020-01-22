@@ -13,13 +13,14 @@ if __name__ == "__main__":
 
     qxga = SLM((1536, 2048), (8.2, 8.2), 500)
     mask = AnnularMask(3.824, 2.689)
-    nikon_10x_0p3 = Objective(10, 0.3, 200)
+    # nikon_10x_0p3 = Objective(10, 0.3, 200)
+    nikon_10x_0p25 = Objective(10, 0.25, 200)
     # so_0p65 = Objective(1, 0.65, 7.14)
 
-    field = Field(qxga, mask, nikon_10x_0p3, 0.488, 60)
-    field = Lattice(3.824, 2.689, 1, 3)(field)
-    # field = Bessel(3.824, 2.689)(field)
-    field = Defocus(80)(field)
+    field = Field(qxga, mask, nikon_10x_0p25, 0.488, 60)
+    # field = Lattice(3.824, 2.689, 1, 3)(field)
+    field = Bessel(3.824, 2.689)(field)
+    field = Defocus(50)(field)
 
-    field.simulate(cf=0.05, zrange=(0, 200), zstep=5)
+    field.simulate(cf=0.05, zrange=(-200, 200), zstep=10)
     # preview_simulation(results)

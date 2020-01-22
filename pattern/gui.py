@@ -2,6 +2,7 @@ from functools import partial
 import logging
 import sys
 
+import pyqtgraph as pq
 from PySide2.QtWidgets import QApplication, QMainWindow
 
 from pattern import SLM, AnnularMask, Field, Objective
@@ -29,6 +30,21 @@ class Dialog(QMainWindow):
     ##
 
     def regenerate(self):
+        if self._field is None:
+            self._update_system()
+
+        field = self._field
+        print(field.data)
+
+        from pattern import Bessel
+
+        field = Bessel(3.824, 2.689)(field)
+
+        results = field.simulate()
+
+        image = pq.ImageItem(results["ideal"])
+        self.ui.ideal.addItem(image)
+
         # complete update, disable
         self.ui.regenerate.setEnabled(False)
 
@@ -104,6 +120,8 @@ class Dialog(QMainWindow):
     ##
 
     def _update_slm(self):
+        logger.debug("updating slm")
+
         size = {"QXGA": (1536, 2048), "SXGA": (1024, 1280)}[
             self.ui.screensize_combobox.currentText()
         ]
@@ -114,6 +132,8 @@ class Dialog(QMainWindow):
         )
 
     def _update_mask(self):
+        logger.debug("updating mask")
+
         od = self.ui.mask_od_spinbox.value()
         id_ = self.ui.mask_id_spinbox.value()
         self._mask = AnnularMask(od, id_)
@@ -123,11 +143,18 @@ class Dialog(QMainWindow):
         self.ui.mask_id_na.setText("-")
 
     def _update_objective(self):
+        logger.debug("updating objective")
+
         mag = self.ui.objective_magnification_spinbox.value()
         na = self.ui.objective_na_spinbox.value()
         tl = self.ui.tube_lens_spinbox.value()
         objective = Objective(mag, na, tl)
         self._objective = objective
+
+        if not self.ui.same_as_mask.isChecked():
+            # clear na
+            self.ui.bessel_od_na.setText("-")
+            self.ui.bessel_id_na.setText("-")
 
     def _update_system(self):
         wavelength = self.ui.wavelength_spinbox.value()
@@ -151,6 +178,10 @@ class Dialog(QMainWindow):
         self.ui.mask_id_na.setText(f"{self._mask.na_in:.4f}")
         # update bessel na
         if self.ui.same_as_mask.isChecked():
+            self.ui.bessel_od_na.setText(self.ui.mask_od_na.text())
+            self.ui.bessel_id_na.setText(self.ui.mask_id_na.text())
+        else:
+            # TODO trigger bessel updates
             self.ui.bessel_od_na.setText(self.ui.mask_od_na.text())
             self.ui.bessel_id_na.setText(self.ui.mask_id_na.text())
 
@@ -177,6 +208,10 @@ class Dialog(QMainWindow):
             self.ui.mask_id_spinbox.valueChanged.disconnect(
                 self._sync_bessel_id_with_mask
             )
+
+            # flush na from mask
+            self.ui.bessel_od_na.setText("-")
+            self.ui.bessel_id_na.setText("-")
 
     def _sync_bessel_od_with_mask(self):
         self.ui.bessel_od_spinbox.setValue(self.ui.mask_od_spinbox.value())

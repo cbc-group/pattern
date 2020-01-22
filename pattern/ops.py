@@ -35,18 +35,26 @@ class Bessel(Op):
     def d_out(self):
         return self._d_out
 
+    @property
+    def na_in(self):
+        return self._na_in
+
+    @property
+    def na_out(self):
+        return self._na_out
+
     ##
 
     def _generate_feature(self, field):
         # distance to effective na
         c = field.mag / (2 * field.slm.f_slm)
-        od_na, id_na = self.d_out * c, self.d_in * c
-        logger.info(f"[bessel] NA:{od_na:.4f}, na:{id_na:.4f}")
+        self._na_out, self._na_in = self.d_out * c, self.d_in * c
+        logger.info(f"[bessel] NA:{self.na_out:.4f}, na:{self.na_in:.4f}")
 
         # na to frequency domain size
         c = 2 * np.pi / field.wavelength
-        od_na *= c
-        id_na *= c
+        od_na = c * self.na_out
+        id_na = c * self.na_in
 
         # generate and apply
         bessel = field.polar_k()
