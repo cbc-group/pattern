@@ -6,7 +6,7 @@ channels:
 
 dependencies:
     # core
-    - python=3
+    - python=3.7
 
     # linter
     - flake8
