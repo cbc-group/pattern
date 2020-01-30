@@ -18,6 +18,8 @@ setup(
         "imageio",
         "matplotlib",
         "numpy",
+        'pyqtgraph>=0.11.0rc0',
+        'pyside2==5.12.0'
         "scipy",
         "tqdm",
     ],
