@@ -5,6 +5,11 @@ from pattern.utils import preview_simulation
 
 if __name__ == "__main__":
     import coloredlogs
+    import imageio
+    import numpy as np
+    import pyqtgraph as pg
+
+    pg.setConfigOptions(imageAxisOrder="row-major")
 
     logging.getLogger("matplotlib").setLevel(logging.ERROR)
     coloredlogs.install(
@@ -18,9 +23,20 @@ if __name__ == "__main__":
     # so_0p65 = Objective(1, 0.65, 7.14)
 
     field = Field(qxga, mask, nikon_10x_0p25, 0.488, 60)
-    # field = Lattice(3.824, 2.689, 1, 3)(field)
-    field = Bessel(3.824, 2.689)(field)
-    field = Defocus(50)(field)
+    field = Lattice(3.54025, 2.97275, 43, 3)(field)
+    #field = Bessel(3.54025, 2.97275)(field)
+    # field = Defocus(50)(field)
 
-    field.simulate(cf=0.05, zrange=(-200, 200), zstep=10)
+    slm_pattern = field.slm_pattern(cf=0.15, crop=True)
+    pg.image(slm_pattern.astype(np.uint8))
+
+    # field.simulate(cf=0.05, zrange=(-200, 200), zstep=10)
     # preview_simulation(results)
+
+    from PIL import Image
+
+    image = Image.frombytes(
+        "1", slm_pattern.shape[::-1], np.packbits(slm_pattern, axis=1)
+    )
+    image.save("pattern.bmp")
+

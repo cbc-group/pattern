@@ -154,12 +154,15 @@ class Field(object):
 
         obj_field
         """
+        import matplotlib.pyplot as plt
+
         # pattern
         slm_pattern = self.slm_pattern(cf=cf, crop=False)  # simluation requires no-crop
         slm_field_bl = np.exp(1j * slm_pattern * np.pi)
 
-        # plt.figure("Pattern")
-        # imshow(None, slm_pattern[self._roi()], cmap="binary")
+        # REMOVE
+        plt.figure("Pattern")
+        imshow(None, slm_pattern[self._roi()], cmap="binary")
 
         # mask
         pupil_field_bl_pre = fftshift(fft2(ifftshift(slm_field_bl)))
@@ -170,11 +173,12 @@ class Field(object):
         vmin, vmax = tuple(np.percentile(post_mask, [0.01, 99.99]))
         logger.debug(f"vmin:{vmin:.4f}, vmax:{vmax:.4f}")
 
-        # plt.figure("Mask")
-        # plt.subplot(121)
-        # imshow("Pre", pre_mask, vmin=vmin, vmax=vmax)
-        # plt.subplot(122)
-        # imshow("Post", post_mask, vmin=vmin, vmax=vmax)
+        # REMOVE
+        plt.figure("Mask")
+        plt.subplot(121)
+        imshow("Pre", pre_mask, vmin=vmin, vmax=vmax)
+        plt.subplot(122)
+        imshow("Post", post_mask, vmin=vmin, vmax=vmax)
 
         # slm
         slm_field_ideal = self.slm_field_ideal()
@@ -183,11 +187,12 @@ class Field(object):
         obj_field = fftshift(fft2(ifftshift(pupil_field_bl_post)))
         bl = field2intensity(obj_field)
 
-        # plt.figure("SLM")
-        # plt.subplot(121)
-        # imshow("Ideal", ideal)
-        # plt.subplot(122)
-        # imshow("Generated", bl)
+        # REMOVE
+        plt.figure("SLM")
+        plt.subplot(121)
+        imshow("Ideal", ideal)
+        plt.subplot(122)
+        imshow("Generated", bl)
 
         ## axial
         # z = np.arange(zrange[0], zrange[1], step=zstep)
@@ -204,8 +209,8 @@ class Field(object):
         # imshow(None, axial)
         # plt.gca().set_aspect(self.slm.pixel_size[1] / zstep)
 
-        ## .. display
-        # plt.show()
+        # .. display
+        plt.show()
 
         return {
             "ideal": ideal,

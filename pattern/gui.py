@@ -147,7 +147,7 @@ class Dialog(QMainWindow):
     ##
 
     def _update_slm(self):
-        logger.debug("updating slm")
+        logger.debug("update slm")
 
         size = {"QXGA": (1536, 2048), "SXGA": (1024, 1280)}[
             self.ui.screensize_combobox.currentText()
@@ -159,7 +159,7 @@ class Dialog(QMainWindow):
         )
 
     def _update_mask(self):
-        logger.debug("updating mask")
+        logger.debug("update mask")
 
         # clear na
         self.ui.mask_od_na.setText("-")
@@ -170,7 +170,7 @@ class Dialog(QMainWindow):
         self._mask = AnnularMask(d_out, d_in)
 
     def _update_objective(self):
-        logger.debug("updating objective")
+        logger.debug("update objective")
 
         mag = self.ui.objective_magnification_spinbox.value()
         na = self.ui.objective_na_spinbox.value()
