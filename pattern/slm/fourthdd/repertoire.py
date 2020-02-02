@@ -1,4 +1,3 @@
-import copy
 from enum import Enum
 import glob
 from io import StringIO
@@ -147,25 +146,26 @@ class Repertoire(object):
     ##
 
     @property
-    def images(self):
-        # TODO collect images by iterate over ro
-        pass
+    def default_ro(self):
+        if self._default_ro is None:
+            return next(iter(self._ro.keys()))
+        else:
+            return self._default_ro
 
-    @property
-    def sequences(self):
-        # TODO collect sequences by iterate oer sequences
-        pass
+    @default_ro.setter
+    def default_ro(self, default_ro):
+        self._default_ro = default_ro
 
     ##
 
-    @classmethod
-    def lookup_sequence_id(cls, sequence, pattern="*.seq*"):
-        if sequence in cls._sequences:
-            return cls._sequences[sequence][0]
+    @staticmethod
+    def lookup_sequence_id(sequence, pattern="*.seq*"):
+        if sequence in Repertoire._sequences:
+            return Repertoire._sequences[sequence][0]
 
         # search in the library
         paths = []
-        for s in cls._sequence_lib:
+        for s in Repertoire._sequence_lib:
             paths.extend(glob.glob(os.path.join(s, pattern)))
         paths = {os.path.splitext(os.path.basename(p))[0]: p for p in paths}
         if sequence in paths.keys():
@@ -173,25 +173,25 @@ class Repertoire(object):
             path = paths[sequence]
 
             # assign id
-            n = len(cls._sequences) + 1
+            n = len(Repertoire._sequences) + 1
             if n > 26:
                 raise RuntimeError("cannot store more than 26 sequences")
             c = chr(ord("@") + n)
 
             logger.debug(f'found sequence at "{path}", assign id "{c}"')
-            cls._sequences[sequence] = (c, path)
+            Repertoire._sequences[sequence] = (c, path)
             return c
         else:
             raise ValueError(f'sequence "{sequence}" does not exist in the library')
 
-    @classmethod
-    def lookup_image_id(cls, image, pattern="*.bmp"):
-        if image in cls._images:
-            return cls._images[image][0]
+    @staticmethod
+    def lookup_image_id(image, pattern="*.bmp"):
+        if image in Repertoire._images:
+            return Repertoire._images[image][0]
 
         # search in the library
         paths = []
-        for s in cls._image_lib:
+        for s in Repertoire._image_lib:
             paths.extend(glob.glob(os.path.join(s, pattern)))
         paths = {os.path.splitext(os.path.basename(p))[0]: p for p in paths}
         if image in paths.keys():
@@ -199,10 +199,10 @@ class Repertoire(object):
             path = paths[image]
 
             # assign id
-            n = len(cls._images) + 1
+            n = len(Repertoire._images) + 1
 
             logger.debug(f'found image at "{path}", assign id "{n}"')
-            cls._images[image] = (n, path)
+            Repertoire._images[image] = (n, path)
             return n
         else:
             raise ValueError(f'image "{image}" does not exist in the library')
@@ -212,13 +212,19 @@ class Repertoire(object):
     def compile(self):
         rep = StringIO()
 
+        from pprint import pprint
+
+        pprint(dir(self))
+
+        print(Repertoire._sequences)
+        print(Repertoire._images)
+
         # sequences
         print("SEQUENCES", file=rep)
-        sequences = [(i, p) for i, p in self._sequences.items()]
-        print(self._sequences)
-        print(self._images)
+        sequences = [(i, p) for i, p in type(self)._sequences.items()]
         sequences.sort(key=lambda x: x[0])
         for i, p in sequences:
+            p = os.path.basename(p)
             print(f'{i} "{p}"', file=rep)
         print("SEQUENCES_END", file=rep)
         print(file=rep)
@@ -228,57 +234,48 @@ class Repertoire(object):
         images = [(i, p) for i, p in self._images.items()]
         images.sort(key=lambda x: x[0])
         for i, p in images:
+            p = os.path.basename(p)
             print(f'{i} "{p}"', file=rep)
         print("IMAGES_END", file=rep)
         print(file=rep)
 
         # running orders
+        logger.debug(f'default ro "{self.default_ro}"')
         for name, ro in self._ro.items():
-            if name == self._default_ro:
+            if name == self.default_ro:
                 print("DEFAULT ", end="", file=rep)
             print(f'"{name}"', file=rep)
             print(ro.compile(), file=rep)
-            print()
+            print(file=rep)
 
         return rep.getvalue()
 
-    def set_default_ro(self, ro=None):
-        if ro is None:
-            ro = self._ro.keys()[0]
-        self._default_ro = ro
-
 
 class RepertoireArchive(object):
-    def __init__(self, rep=None):
-        self._repertoire = rep if isinstance(rep, Repertoire) else Repertoire(rep)
+    def __init__(self, rep: Repertoire):
+        self._rep = rep
 
     ##
 
     @property
     def repertoire(self):
-        return self._repertoire
+        return self._rep
 
     ##
 
-    @staticmethod
-    def dump(self, uri, repz):
+    def save(self, uri):
         with ZipFile(uri, "w") as repz:
-            # TODO all files point to files instead of abstracted info, fix that
+            # repertoire
+            logger.debug(f"generating repertoire")
+            repz.writestr("repertoire.rep", self.repertoire.compile())
 
-            # write repertoire first
-            repz.write(self.repertoire.filename)
+            # sequences
+            logger.debug(f"packing sequences into repz")
+            for sequence in self.repertoire.sequences:
+                pass
 
-            # write sequences and images
-            for f in (self.sequences, self.images):
-                repz.write(f)
-
-    @staticmethod
-    def load(self, uri):
-        pass
-
-
-if __name__ == "__main__":
-    images = ""
-    start_fg = FrameGroup(loop=False)
-    start_fg.add_frame("48071 HHMI 50ms")
+            # images
+            logger.debug(f"packing images into repz")
+            for image in self.repertoire.images:
+                pass
 

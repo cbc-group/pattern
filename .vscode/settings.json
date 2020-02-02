@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "C:\\Users\\Andy\\.conda\\envs\\pattern\\python.exe",
+    "python.pythonPath": "/home/andy/.conda/envs/pattern/bin/python",
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true,
