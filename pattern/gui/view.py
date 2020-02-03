@@ -1,4 +1,3 @@
-from functools import partial
 import logging
 import sys
 
@@ -6,7 +5,7 @@ import pyqtgraph as pq
 from PySide2.QtWidgets import QApplication, QMainWindow
 
 from pattern import SLM, AnnularMask, Field, Objective
-from pattern.dialog import Ui_Dialog
+from .dialog import Ui_Dialog
 
 __all__ = ["Dialog"]
 
@@ -199,18 +198,3 @@ class Dialog(QMainWindow):
     def _toggle_auto_spacing(self, active):
         self.ui.spacing_spinbox.setEnabled(not active)
 
-
-if __name__ == "__main__":
-    import coloredlogs
-
-    logging.getLogger("matplotlib").setLevel(logging.ERROR)
-    coloredlogs.install(
-        level="DEBUG", fmt="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S"
-    )
-
-    app = QApplication(sys.argv)
-
-    window = Dialog()
-    window.show()
-
-    sys.exit(app.exec_())
