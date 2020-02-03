@@ -25,12 +25,68 @@ class ActivationMethod(Enum):
     Software = "s"
 
 
+class Cache(object):
+    def __init__(self, src_dir, pattern="*"):
+        self._src_dir = src_dir
+        self._cache, self._paths = [], []
+        self._pattern = pattern
+
+        self._index = 0
+
+    def __getitem__(self, name):
+        try:
+            i = self._cache.index(name)
+            return i + 1, self._paths[i]
+        except ValueError:
+            # search in the library
+            paths = glob.glob(os.path.join(self.src_dir, self.pattern))
+            paths = {os.path.splitext(os.path.basename(p))[0]: p for p in paths}
+            if name in paths.keys():
+                # lookup path
+                path = paths[name]
+
+                # save it
+                self._cache.append(name)
+                self._paths.append(path)
+
+                return len(self._cache), path
+            else:
+                raise ValueError(f'"{name}" does not exist in the library')
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index >= len(self._cache):
+            raise StopIteration
+        self._index += 1
+        return self._index, self._paths[self._index - 1]
+
+    ##
+
+    @property
+    def pattern(self):
+        """Library search pattern."""
+        return self._pattern
+
+    @property
+    def src_dir(self):
+        return self._src_dir
+
+
 class Frame(object):
-    _sequences = dict()
-    _images = dict()
+    sequence_cache = None
+    image_cache = None
 
     def __init__(self, sequence: str, image: str, wait_trigger: bool = False):
-        self._sequence, self._image = sequence, image
+        s, _ = self.sequence_cache[sequence]
+        # convert sequence id to alphabets
+        if s > 26:
+            raise RuntimeError("cannot store more than 26 sequences")
+        self._sequence = chr(ord("@") + s)
+
+        self._image, _ = self.image_cache[image]
+
         self._wait_trigger = wait_trigger
 
     ##
@@ -50,60 +106,7 @@ class Frame(object):
     ##
 
     def compile(self):
-        s = Frame.lookup_sequence_id(self.sequence)
-        i = Frame.lookup_image_id(self.image)
-        return f"{'t' if self.wait_trigger else ''}({s},{i})"
-
-    ##
-
-    @classmethod
-    def lookup_sequence_id(cls, sequence, pattern="*.seq*"):
-        if sequence in cls._sequences:
-            return cls._sequences[sequence][0]
-
-        # search in the library
-        paths = []
-        for s in Repertoire._sequence_lib:
-            paths.extend(glob.glob(os.path.join(s, pattern)))
-        paths = {os.path.splitext(os.path.basename(p))[0]: p for p in paths}
-        if sequence in paths.keys():
-            # lookup path
-            path = paths[sequence]
-
-            # assign id
-            n = len(cls._sequences) + 1
-            if n > 26:
-                raise RuntimeError("cannot store more than 26 sequences")
-            c = chr(ord("@") + n)
-
-            logger.debug(f'found sequence at "{path}", assign id "{c}"')
-            cls._sequences[sequence] = (c, path)
-            return c
-        else:
-            raise ValueError(f'sequence "{sequence}" does not exist in the library')
-
-    @classmethod
-    def lookup_image_id(cls, image, pattern="*.bmp"):
-        if image in cls._images:
-            return cls._images[image][0]
-
-        # search in the library
-        paths = []
-        for s in Repertoire._image_lib:
-            paths.extend(glob.glob(os.path.join(s, pattern)))
-        paths = {os.path.splitext(os.path.basename(p))[0]: p for p in paths}
-        if image in paths.keys():
-            # lookup path
-            path = paths[image]
-
-            # assign id
-            n = len(cls._images) + 1
-
-            logger.debug(f'found image at "{path}", assign id "{n}"')
-            cls._images[image] = (n, path)
-            return n
-        else:
-            raise ValueError(f'image "{image}" does not exist in the library')
+        return f"{'t' if self.wait_trigger else ''}({self.sequence},{self.image})"
 
 
 class FrameGroup(object):
@@ -137,7 +140,7 @@ class FrameGroup(object):
         self._frames.append(Frame(sequence, image, wait_trigger))
 
     def compile(self):
-        frames = " ".join(f.compile() for f in self._frames)
+        frames = "".join(f"{f.compile()} " for f in self._frames)
         return f"{{{frames}}}" if self.loop else f"<{frames}>"
 
 
@@ -178,15 +181,14 @@ class RunningOrder(object):
 
 
 class Repertoire(object):
-    _sequence_lib = []
-    _image_lib = []
-
     def __init__(self, sequence_lib, image_lib):
-        self._sequence_lib.append(sequence_lib)
-        self._image_lib.append(image_lib)
+        Frame.sequence_cache = Cache(sequence_lib, "*.seq11")
+        Frame.image_cache = Cache(image_lib, "*.bmp")
 
         self._ro = dict()
         self._default_ro = None
+
+        self._sequences, self._images = [], []
 
     def __getitem__(self, name: str):
         return self._ro[name]
@@ -211,23 +213,26 @@ class Repertoire(object):
     def default_ro(self, default_ro):
         self._default_ro = default_ro
 
+    @property
+    def images(self):
+        assert self._images is not None, "repertoire not compiled yet"
+        return self._images
+
+    @property
+    def sequences(self):
+        assert self._sequences is not None, "repertoire not compiled yet"
+        return self._sequences
+
     ##
 
     def compile(self):
         rep = StringIO()
 
-        from pprint import pprint
-
-        pprint(dir(self))
-
-        print(Frame._sequences)
-        print(Frame._images)
-
         # sequences
         print("SEQUENCES", file=rep)
-        sequences = [(i, p) for i, p in Frame._sequences.items()]
-        sequences.sort(key=lambda x: x[0])
-        for i, p in sequences:
+        for i, p in Frame.sequence_cache:
+            i = chr(ord("@") + i)  # convert to alphabet by definition
+            self._sequences.append(p)
             p = os.path.basename(p)
             print(f'{i} "{p}"', file=rep)
         print("SEQUENCES_END", file=rep)
@@ -235,11 +240,10 @@ class Repertoire(object):
 
         # images
         print("IMAGES", file=rep)
-        images = [(i, p) for i, p in Frame._images.items()]
-        images.sort(key=lambda x: x[0])
-        for i, p in images:
+        for i, p in Frame.image_cache:
+            self._images.append(p)
             p = os.path.basename(p)
-            print(f'{i} "{p}"', file=rep)
+            print(f'1 "{p}"', file=rep)
         print("IMAGES_END", file=rep)
         print(file=rep)
 
@@ -253,6 +257,8 @@ class Repertoire(object):
             print(file=rep)
 
         return rep.getvalue()
+
+    ##
 
 
 class RepertoireArchive(object):
@@ -269,17 +275,24 @@ class RepertoireArchive(object):
 
     def save(self, uri):
         with ZipFile(uri, "w") as repz:
+            rep = self.repertoire.compile()
+            print(">>>")
+            print(rep)
+            print("<<<")
+
             # repertoire
-            logger.debug(f"generating repertoire")
-            repz.writestr("repertoire.rep", self.repertoire.compile())
+            logger.debug(f"generating repertoire text")
+            repz.writestr("repertoire.rep", rep)
 
             # sequences
             logger.debug(f"packing sequences into repz")
+            print(self.repertoire.sequences)
             for sequence in self.repertoire.sequences:
-                pass
+                repz.write(sequence, arcname=os.path.basename(sequence))
 
             # images
             logger.debug(f"packing images into repz")
+            print(self.repertoire.images)
             for image in self.repertoire.images:
-                pass
+                repz.write(image, arcname=os.path.basename(image))
 

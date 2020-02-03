@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 import os
 
@@ -54,8 +55,9 @@ ro.add_frame_group(fg)
 
 rep["reference"] = ro
 
-## compile
-print(rep.compile())
-
 ## create repz
 repz = RepertoireArchive(rep)
+
+date = datetime.now()
+timestamp = f"{date.year}{date.month:02d}{date.day:02d}T{date.hour:02d}{date.minute:02d}{date.second:02d}"
+repz.save(f"packed_{timestamp}.repz11")
