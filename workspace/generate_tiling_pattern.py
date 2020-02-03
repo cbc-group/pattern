@@ -1,7 +1,7 @@
 import logging
 
 from pattern import SLM, AnnularMask, Bessel, Defocus, Field, Lattice, Objective
-from pattern.utils import preview_simulation
+from pattern.utils import write_pattern_bmp
 
 if __name__ == "__main__":
     import coloredlogs
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     field = Field(qxga, mask, nikon_10x_0p25, 0.488, 60)
     field = Lattice(3.54025, 2.97275, 43, 3)(field)
-    #field = Bessel(3.54025, 2.97275)(field)
+    # field = Bessel(3.54025, 2.97275)(field)
     # field = Defocus(50)(field)
 
     slm_pattern = field.slm_pattern(cf=0.15, crop=True)
@@ -33,10 +33,5 @@ if __name__ == "__main__":
     # field.simulate(cf=0.05, zrange=(-200, 200), zstep=10)
     # preview_simulation(results)
 
-    from PIL import Image
-
-    image = Image.frombytes(
-        "1", slm_pattern.shape[::-1], np.packbits(slm_pattern, axis=1)
-    )
-    image.save("pattern.bmp")
+    write_pattern_bmp("pattern.bmp", slm_pattern)
 
