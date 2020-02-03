@@ -1,10 +1,9 @@
 import logging
 
-# import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fftpack import fft2, fftshift, ifftshift
 
-from pattern.utils import field2intensity, imshow
+from pattern.utils import field2intensity
 
 __all__ = ["Field"]
 
@@ -12,6 +11,18 @@ logger = logging.getLogger(__name__)
 
 
 class Field(object):
+    """
+    Field describes how the final product is formed, including system specification and 
+    physical spatial filters.
+    
+    Args:
+        slm (SLM): the SLM used in the system
+        mask (Mask): type of spatial filter
+        obj (Objective): the objective that face toward the sample
+        wavelength (float): excitation wavelength in microns
+        mag (float): system magnification
+    """
+
     def __init__(self, slm, mask, obj, wavelength, mag):
         self._slm, self._mask, self._obj = slm, mask, obj
         self._wavelength = wavelength
