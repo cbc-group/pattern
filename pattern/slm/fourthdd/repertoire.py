@@ -16,9 +16,6 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-# TODO create sequence/image cache
-
-
 class ActivationMethod(Enum):
     Immediate = ""
     Hardware = "h"
@@ -36,7 +33,7 @@ class Cache(object):
     def __getitem__(self, name):
         try:
             i = self._cache.index(name)
-            return i + 1, self._paths[i]
+            return i, self._paths[i]
         except ValueError:
             # search in the library
             paths = glob.glob(os.path.join(self.src_dir, self.pattern))
@@ -49,7 +46,7 @@ class Cache(object):
                 self._cache.append(name)
                 self._paths.append(path)
 
-                return len(self._cache), path
+                return len(self._cache) - 1, path
             else:
                 raise ValueError(f'"{name}" does not exist in the library')
 
@@ -59,8 +56,9 @@ class Cache(object):
     def __next__(self):
         if self._index >= len(self._cache):
             raise StopIteration
+        i = self._index
         self._index += 1
-        return self._index, self._paths[self._index - 1]
+        return i, self._paths[i]
 
     ##
 
@@ -83,7 +81,7 @@ class Frame(object):
         # convert sequence id to alphabets
         if s > 26:
             raise RuntimeError("cannot store more than 26 sequences")
-        self._sequence = chr(ord("@") + s)
+        self._sequence = chr(ord("A") + s)
 
         self._image, _ = self.image_cache[image]
 
@@ -140,7 +138,7 @@ class FrameGroup(object):
         self._frames.append(Frame(sequence, image, wait_trigger))
 
     def compile(self):
-        frames = "".join(f"{f.compile()} " for f in self._frames)
+        frames = " ".join(f.compile() for f in self._frames)
         return f"{{{frames}}}" if self.loop else f"<{frames}>"
 
 
@@ -231,7 +229,7 @@ class Repertoire(object):
         # sequences
         print("SEQUENCES", file=rep)
         for i, p in Frame.sequence_cache:
-            i = chr(ord("@") + i)  # convert to alphabet by definition
+            i = chr(ord("A") + i)  # convert to alphabet by definition
             self._sequences.append(p)
             p = os.path.basename(p)
             print(f'{i} "{p}"', file=rep)
@@ -286,13 +284,11 @@ class RepertoireArchive(object):
 
             # sequences
             logger.debug(f"packing sequences into repz")
-            print(self.repertoire.sequences)
             for sequence in self.repertoire.sequences:
                 repz.write(sequence, arcname=os.path.basename(sequence))
 
             # images
             logger.debug(f"packing images into repz")
-            print(self.repertoire.images)
             for image in self.repertoire.images:
                 repz.write(image, arcname=os.path.basename(image))
 
