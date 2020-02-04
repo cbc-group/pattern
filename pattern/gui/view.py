@@ -5,6 +5,7 @@ import pyqtgraph as pq
 from PySide2.QtWidgets import QApplication, QMainWindow
 
 from pattern import SLM, AnnularMask, Field, Objective
+from .controller import SLMController
 from .dialog import Ui_Dialog
 
 __all__ = ["Dialog"]
@@ -19,10 +20,13 @@ def connect_signals_to_callbacks(signals, callbacks):
 
 
 class Dialog(QMainWindow):
-    def __init__(self):
+    def __init__(self, model, slm_controller):
         super().__init__()
-        self.ui = Ui_Dialog()
 
+        self._model = model
+        self._slm_controller = slm_controller
+
+        self.ui = Ui_Dialog()
         self.setup_ui()
 
     ##
@@ -78,27 +82,25 @@ class Dialog(QMainWindow):
         self._setup_linear_bessel_parameters()
         self._setup_tiling_parameters()
 
-        self.ui.regenerate.clicked.connect(self.regenerate)
-
     def _setup_slm_parameters(self):
         # populate screen size options
         for size in ("QXGA", "SXGA"):
             self.ui.screensize_combobox.addItem(size)
 
-        signals = [
-            self.ui.screensize_combobox.currentIndexChanged,
-            self.ui.pixel_size_spinbox.valueChanged,
-            self.ui.focal_length_spinbox.valueChanged,
-        ]
-        callbacks = [self._update_slm, self._requires_regenerate]
-        connect_signals_to_callbacks(signals, callbacks)
+        self.ui.screensize_combobox.currentTextChanged.connect(
+            self._slm_controller.update_screen_shape
+        )
+        self.ui.pixel_size_spinbox.valueChanged.connect(
+            self._slm_controller.update_pixel_shape
+        )
+        self.ui.focal_length_spinbox.valueChanged.connect(self._slm_controller.update_f)
 
     def _setup_mask_parameters(self):
         signals = [
             self.ui.mask_od_spinbox.valueChanged,
             self.ui.mask_id_spinbox.valueChanged,
         ]
-        callbacks = [self._update_mask, self._requires_regenerate]
+        callbacks = [self._controller.update_mask_parameters]
         connect_signals_to_callbacks(signals, callbacks)
 
     def _setup_objective_parameters(self):
@@ -107,7 +109,7 @@ class Dialog(QMainWindow):
             self.ui.objective_na_spinbox.valueChanged,
             self.ui.tube_lens_spinbox.valueChanged,
         ]
-        callbacks = [self._update_objective, self._requires_regenerate]
+        callbacks = [self._controller.update_objective_parameters]
         connect_signals_to_callbacks(signals, callbacks)
 
     def _setup_system_parameters(self):
@@ -117,10 +119,8 @@ class Dialog(QMainWindow):
             self.ui.dither_steps_spinbox.valueChanged,
             self.ui.dither_interval_spinbox.valueChanged,
         ]
-        callbacks = [self._update_system, self._requires_regenerate]
+        callbacks = [self._controller.update_system_parameters]
         connect_signals_to_callbacks(signals, callbacks)
-
-        self.ui.dither_steps_spinbox.valueChanged.connect(self._toggle_dithering)
 
     def _setup_binarize_parameters(self):
         pass
