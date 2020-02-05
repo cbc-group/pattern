@@ -31,13 +31,13 @@ field = Field(qxga, nikon_10x_0p25, 0.488, 60)
 # field = Lattice(3.54025, 2.97275, 7, 3)(field)
 field = Lattice(3.824, 2.689, 7, 3)(field)
 # field = Bessel(3.54025, 2.97275)(field)
-field = Defocus(25)(field)
+field = Defocus(10)(field)
 
 synth = Synthesizer(field, mask)
 
 options = ["excitation_xz", "excitation_xy"]
 results = synth.simulate(
-    options, bounded=True, crop=False, zrange=(-50, 50), zstep=1
+    options, bounded=True, crop=False, zrange=(-30, 30), zstep=1
 )
 w = pg.image(results["excitation_xy"])
 

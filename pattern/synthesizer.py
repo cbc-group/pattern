@@ -111,6 +111,8 @@ class Synthesizer(object):
         save("excitation_xz", obj_field)
 
         if "excitation_xy" in options:
+            from tqdm import tqdm
+
             y = np.arange(*zrange, step=zstep)
             xy = np.zeros((self.field.shape[1], len(y)), dtype=obj_field.dtype)
             kz = self.field.kz()
@@ -136,8 +138,8 @@ class Synthesizer(object):
             xy = f.max(axis=0)
             """
 
-            for i, iy in enumerate(y):
-                print(iy)
+            logger.info('iterating over Y axis')
+            for i, iy in tqdm(enumerate(y), total=len(y)):
                 f = post_mask * np.exp(1j * kz * iy)
                 f = fftshift(fft2(ifftshift(f)))
 
