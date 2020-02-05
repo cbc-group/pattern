@@ -3,3 +3,4 @@ from .mask import *
 from .objective import *
 from .ops import *
 from .slm import SLM
+from .synthesizer import *

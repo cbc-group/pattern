@@ -192,7 +192,7 @@ class Field(object):
 
     def register_op(self, op):
         self._ops.append(op)
-        
+
     ##
 
     def _roi(self):

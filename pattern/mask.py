@@ -15,10 +15,7 @@ class Mask(ABC):
         self._mask = None
 
     def __call__(self, field):
-        if isinstance(field, Field):
-            field.data *= self.mask
-        else:
-            field *= self.mask
+        field *= self.mask
         return field
 
     ##

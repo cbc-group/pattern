@@ -18,6 +18,8 @@ class Op(ABC):
 
         self.update(field)
 
+        return field
+
     ##
 
     @abstractmethod
@@ -102,6 +104,9 @@ class Lattice(Bessel):
         return field
 
     def update(self, field):
+        # generate bessel template
+        super().update(field)
+
         # tile-corrected grid
         ky, kx = field.cartesian_k()
         grid = kx * np.cos(self.tilt) + ky * np.sin(self.tilt)
@@ -111,14 +116,14 @@ class Lattice(Bessel):
         offsets = np.linspace(-(n - 1) / 2.0, (n - 1) / 2.0, n) * self.spacing
 
         # mux
-        offsets_sum = np.zeros_like(field.data)
+        n = max(*field.shape)
+        offsets_sum = np.zeros((n,) * 2, np.complex64)
         for offset in tqdm(offsets):
             logger.debug(f"offset:{offset}")
             offsets_sum += np.exp(1j * offset * grid)
 
         # apply bessel
-        bessel = self._generate_feature(field)
-        lattice = bessel * offsets_sum
+        lattice = self._bessel * offsets_sum
 
         # energy conservation
         lattice /= n

@@ -1,18 +1,21 @@
 import logging
+from typing import Optional
 
 import numpy as np
 from scipy.fftpack import fft2, fftshift, ifftshift
 
 from .field import Field
+from .mask import Mask
 
-__all__ = ["Simulation"]
+__all__ = ["Synthesizer"]
 
 logger = logging.getLogger(__name__)
 
 
-class Simulation(object):
-    def __init__(self, field: Field):
+class Synthesizer(object):
+    def __init__(self, field: Field, mask: Optional[Mask] = None):
         self._field = field
+        self._mask = mask  # spatial filter
 
     ##
 
@@ -20,25 +23,18 @@ class Simulation(object):
     def field(self):
         return self._field
 
-    ##
-
-    def excitation_xz(self):
-        pass
-
-    def excitation_yz(self):
-        pass
+    @property
+    def mask(self):
+        return self._mask
 
     ##
-
-    def _dither(self):
-        pass
 
     def ideal_field(self, bounded=False):
         """
         Ideal field after applying all the operations.
 
         Args:
-            bounded (bool): pattern is bounded to SLM physical size   
+            bounded (bool): pattern is bounded to SLM physical size
         """
         n = max(*self.field.shape)
         ideal_field = np.zeros((n,) * 2, np.complex64)
@@ -56,7 +52,7 @@ class Simulation(object):
         # bounded?
         if bounded:
             slm_roi = np.zeros_like(ideal_field)
-            slm_roi[self._roi()] = 1
+            slm_roi[self.field._roi()] = 1
             ideal_field *= slm_roi
 
         return ideal_field
@@ -86,3 +82,79 @@ class Simulation(object):
             pattern = pattern[self.field._roi()]
 
         return pattern
+
+    ##
+
+    def simulate(self, options, crop=False, zrange=(-100, 100), zstep=10, **kwargs):
+        results = dict()
+
+        def save(key, _image, e_field=True):
+            image = _image.copy()
+            if e_field:
+                image = np.square(image)
+                image = np.real(image)
+            results[key] = image
+
+        pattern = self.slm_pattern(crop=False, **kwargs)  # do not crop in the process
+        save("pattern", pattern, e_field=False)
+
+        slm_field = np.exp(1j * pattern * np.pi)
+
+        pre_mask = fftshift(fft2(ifftshift(slm_field)))
+        save("pre_mask", pre_mask)
+
+        self.mask.calibrate(self.field)
+        post_mask = self.mask(pre_mask.copy())
+        save("post_mask", post_mask)
+
+        obj_field = fftshift(fft2(ifftshift(post_mask)))
+        save("excitation_xz", obj_field)
+
+        if "excitation_xy" in options:
+            y = np.arange(*zrange, step=zstep)
+            xy = np.zeros((self.field.shape[1], len(y)), dtype=obj_field.dtype)
+            kz = self.field.kz()
+
+            """
+            # defocus term
+            defocus = np.einsum("ji,k->jik", kz, y)
+            defocus = np.exp(1j * defocus)
+
+            # scan over z
+            f = np.einsum("ji,jik->jik", post_mask, defocus)
+
+            # back to real space
+            f = ifftshift(f, axes=(0, 1))
+            f = fft2(f, axes=(0, 1))
+            f = fftshift(f, axes=(0, 1))
+
+            # E field to intensity
+            f = np.square(f)
+            f = np.real(f)
+
+            # select XY view
+            xy = f.max(axis=0)
+            """
+
+            for i, iy in enumerate(y):
+                print(iy)
+                f = post_mask * np.exp(1j * kz * iy)
+                f = fftshift(fft2(ifftshift(f)))
+
+                f = np.square(f)
+                f = np.real(f)
+
+                xy[:, i] = f.max(axis=0)
+
+            save("excitation_xy", xy)
+
+        if crop:
+            for key, image in results.items():
+                results[key] = image[self.field._roi()]
+
+        return results
+
+    ##
+
+    def _dither(self):
+        pass
