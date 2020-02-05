@@ -4,25 +4,35 @@ import logging
 import numpy as np
 from tqdm import tqdm
 
+from .field import Field
+
 __all__ = ["Bessel", "Lattice", "Defocus"]
 
 logger = logging.getLogger(__name__)
 
 
 class Op(ABC):
+    def __call__(self, field: Field):
+        assert isinstance(field, Field), "Ops can only apply register with a Field"
+        field.register_op(self)
+
+        self.update(field)
+
+    ##
+
     @abstractmethod
-    def __call__(self, field):
+    def apply(self, field: np.ndarray):
+        """Apply effect to a proposed field."""
+        return field  # noop
+
+    def update(self, field: Field):
+        """Trigger update using current field."""
         pass
 
 
 class Bessel(Op):
     def __init__(self, d_out, d_in):
         self._d_out, self._d_in = d_out, d_in
-
-    def __call__(self, field):
-        bessel = self._generate_feature(field)
-        field.data += bessel
-        return field
 
     ##
 
@@ -44,7 +54,11 @@ class Bessel(Op):
 
     ##
 
-    def _generate_feature(self, field):
+    def apply(self, field):
+        field += self._bessel
+        return field
+
+    def update(self, field):
         # distance to effective na
         c = field.mag / (2 * field.slm.f_slm)
         self._na_out, self._na_in = self.d_out * c, self.d_in * c
@@ -54,14 +68,12 @@ class Bessel(Op):
         c = 2 * np.pi / field.wavelength
         od_na = c * self.na_out
         id_na = c * self.na_in
-        print(c)
 
-        # generate and apply
+        # generate template
         bessel = field.polar_k()
-        print(bessel)
         bessel = (bessel > id_na) & (bessel < od_na)
-        print(bessel)
-        return bessel
+
+        self._bessel = bessel
 
 
 class Lattice(Bessel):
@@ -69,7 +81,27 @@ class Lattice(Bessel):
         super().__init__(d_out, d_in)
         self._n_beam, self._spacing, self._tilt = n_beam, spacing, tilt
 
-    def __call__(self, field):
+    ##
+
+    @property
+    def n_beam(self):
+        return self._n_beam
+
+    @property
+    def spacing(self):
+        return self._spacing
+
+    @property
+    def tilt(self):
+        return self._tilt
+
+    ##
+
+    def apply(self, field):
+        field += self._lattice
+        return field
+
+    def update(self, field):
         # tile-corrected grid
         ky, kx = field.cartesian_k()
         grid = kx * np.cos(self.tilt) + ky * np.sin(self.tilt)
@@ -91,34 +123,12 @@ class Lattice(Bessel):
         # energy conservation
         lattice /= n
 
-        field.data += lattice
-
-        return field
-
-    ##
-
-    @property
-    def n_beam(self):
-        return self._n_beam
-
-    @property
-    def spacing(self):
-        return self._spacing
-
-    @property
-    def tilt(self):
-        return self._tilt
+        self._lattice = lattice
 
 
 class Defocus(Op):
     def __init__(self, focus):
         self._focus = focus
-
-    def __call__(self, field):
-        # focal axis resolution
-        kz = field.kz()
-        field.data *= np.exp(1j * kz * self.focus)
-        return field
 
     ##
 
@@ -129,3 +139,13 @@ class Defocus(Op):
     @property
     def weights(self):
         return self._weights
+
+    ##
+
+    def apply(self, field):
+        field *= self._defocus
+        return field
+
+    def update(self, field):
+        kz = field.kz()
+        self._defocus = np.exp(1j * kz * self.focus)
