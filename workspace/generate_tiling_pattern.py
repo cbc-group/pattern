@@ -35,12 +35,13 @@ field = Defocus(10)(field)
 
 synth = Synthesizer(field, mask)
 
-options = ["excitation_xz", "excitation_xy"]
+options = ["pre_mask", "post_mask"]
 results = synth.simulate(
     options, bounded=True, crop=False, zrange=(-30, 30), zstep=1
 )
-w = pg.image(results["excitation_xy"])
 
+
+w = pg.image(results["excitation_xy"])
 w.getView().setAspectLocked(ratio=1 / (8.2 / 60))
 
 # write_pattern_bmp("pattern.bmp", slm_pattern)
