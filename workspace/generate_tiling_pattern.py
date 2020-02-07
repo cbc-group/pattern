@@ -23,28 +23,36 @@ coloredlogs.install(
     level="DEBUG", fmt="%(asctime)s %(levelname)s %(message)s", datefmt="%H:%M:%S"
 )
 
-qxga = SLM((1536, 2048), (8.2, 8.2), 500)
-mask = AnnularMask(3.824, 2.689)
-nikon_10x_0p25 = Objective(10, 0.25, 200)
+if __name__ == "__main__":
+    qxga = SLM((1536, 2048), (8.2, 8.2), 500)
+    mask = AnnularMask(3.824, 2.689)
+    nikon_10x_0p25 = Objective(10, 0.25, 200)
 
-field = Field(qxga, nikon_10x_0p25, 0.488, 60)
-# field = Lattice(3.54025, 2.97275, 7, 3)(field)
-field = Lattice(3.824, 2.689, 7, 3)(field)
-# field = Bessel(3.54025, 2.97275)(field)
-field = Defocus(10)(field)
+    """
+    qxga = SLM((1536, 2048), (8.2, 8.2), 350)
+    mask = AnnularMask(3.824, 2.689)
+    so_29x_0p7 = Objective(28.6, 0.71, 70)
+    """
 
-synth = Synthesizer(field, mask)
+    field = Field(qxga, nikon_10x_0p25, 0.488, 60)
+    # field = Lattice(3.54025, 2.689, 7, 3)(field)
+    field = Bessel(mask.d_out, mask.d_in)(field)
+    field = Defocus(7)(field)
 
-options = ["pre_mask", "post_mask"]
-results = synth.simulate(
-    options, bounded=True, crop=False, zrange=(-30, 30), zstep=1
-)
+    synth = Synthesizer(field, mask)
 
+    options = ["excitation_xy"]
+    results = synth.simulate(
+        options, bounded=True, crop=False, zrange=(-50, 50), zstep=2, cf=0.0
+    )
 
-w = pg.image(results["excitation_xy"])
-w.getView().setAspectLocked(ratio=1 / (8.2 / 60))
+    w = pg.image(results["excitation_xy"])
+    w.getView().setAspectLocked(ratio=2 / (8.2 / 60))
 
-# write_pattern_bmp("pattern.bmp", slm_pattern)
+    w = pg.image(results["excitation_xz"])
+    w.getView().setAspectLocked()
 
-app = pg.mkQApp()
-app.instance().exec_()
+    # write_pattern_bmp("pattern.bmp", slm_pattern)
+
+    app = pg.mkQApp()
+    app.instance().exec_()

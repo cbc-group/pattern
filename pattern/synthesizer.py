@@ -1,3 +1,4 @@
+from functools import partial
 import logging
 from typing import Optional
 
@@ -86,6 +87,8 @@ class Synthesizer(object):
     ##
 
     def simulate(self, options, crop=False, zrange=(-100, 100), zstep=10, **kwargs):
+        from multiprocessing import cpu_count, Pool
+
         results = dict()
 
         def save(key, _image, e_field=True):
@@ -138,7 +141,8 @@ class Synthesizer(object):
             xy = f.max(axis=0)
             """
 
-            logger.info('iterating over Y axis')
+            logger.info("iterating over Y axis")
+            """
             for i, iy in tqdm(enumerate(y), total=len(y)):
                 f = post_mask * np.exp(1j * kz * iy)
                 f = fftshift(fft2(ifftshift(f)))
@@ -147,14 +151,31 @@ class Synthesizer(object):
                 f = np.real(f)
 
                 xy[:, i] = f.max(axis=0)
+            """
+            with Pool(cpu_count()) as pool:
+                func = partial(self._simulate_xy, post_mask=post_mask, kz=kz)
+                xy = [r for r in tqdm(pool.imap_unordered(func, y), total=len(y))]
+            xy.sort(key=lambda x: x[0])
+            xy = np.vstack([i for _, i in xy])
 
-            save("excitation_xy", xy)
+            save("excitation_xy", xy.T)
 
         if crop:
             for key, image in results.items():
                 results[key] = image[self.field._roi()]
 
         return results
+
+    def _simulate_xy(self, y, post_mask, kz):
+        defocus = np.exp(1j * kz * y)
+
+        f = post_mask * defocus
+        f = fftshift(fft2(ifftshift(f)))
+
+        f = np.square(f)
+        f = np.real(f)
+
+        return y, f.max(axis=0)
 
     ##
 

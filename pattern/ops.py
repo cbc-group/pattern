@@ -75,6 +75,15 @@ class Bessel(Op):
         bessel = field.polar_k()
         bessel = (bessel > id_na) & (bessel < od_na)
 
+        # estimate lightsheet profile
+        mag_k = field.mag * field.objective.f / field.slm.f_slm  # k-space mag
+        logger.debug(f"k-space mag:{mag_k}")
+        d = (self.d_out - self.d_in) / 2 * mag_k
+        L = (
+            d * field.objective.f / (self.d_out * mag_k) * 1000
+        )  # bessel beam length [um]
+        logger.info(f"[bessel] length:{L:.1f}um")
+
         self._bessel = bessel
 
 

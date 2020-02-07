@@ -197,6 +197,7 @@ class Field(object):
 
     def _roi(self):
         ny0, nx0 = self.slm.shape
-        ny, nx = self.shape
-        ox, oy = (nx - nx0) // 2, (ny - ny0) // 2
+        n = max(*self.shape)
+        ox, oy = (n - nx0) // 2, (n - ny0) // 2
+        logger.debug(f"roi offset, ox:{ox}, oy:{oy}")
         return slice(oy, oy + ny0), slice(ox, ox + nx0)
